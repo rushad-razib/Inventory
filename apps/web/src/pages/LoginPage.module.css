@@ -1,0 +1,88 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+}
+
+.card {
+  width: min(100%, 420px);
+  background: var(--color-stone-raised);
+  border: 1px solid var(--color-stone-line);
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow: var(--shadow);
+  padding: 2rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.brand {
+  margin: 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-teal);
+  font-weight: 600;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.lead {
+  margin: 0 0 0.5rem;
+  color: var(--color-ink-muted);
+}
+
+.label {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.input {
+  border: 1px solid var(--color-stone-line);
+  border-radius: var(--radius);
+  padding: 0.7rem 0.8rem;
+  background: var(--color-stone);
+}
+
+.input:focus {
+  outline: 2px solid rgb(15 107 107 / 35%);
+  border-color: var(--color-teal);
+}
+
+.button {
+  margin-top: 0.5rem;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--color-teal);
+  color: white;
+  padding: 0.8rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+  background: var(--color-teal-hover);
+}
+
+.button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 0.9rem;
+}
+
+.fieldError {
+  color: var(--color-danger);
+  font-size: 0.8rem;
+  font-weight: 400;
+}

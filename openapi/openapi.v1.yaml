@@ -1,0 +1,353 @@
+openapi: 3.1.2
+info:
+  title: 'Meridian API'
+  version: 1.0.0
+servers:
+  -
+    url: 'http://localhost:8000/api'
+paths:
+  /v1/auth/login:
+    post:
+      operationId: auth.login
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserResource'
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        422:
+          $ref: '#/components/responses/ValidationException'
+  /v1/auth/logout:
+    post:
+      operationId: auth.logout
+      tags:
+        - Auth
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: 'null'
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/auth/me:
+    get:
+      operationId: auth.me
+      tags:
+        - Auth
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserResource'
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/auth/tokens:
+    post:
+      operationId: auth.createToken
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTokenRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PersonalAccessTokenResource'
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/auth/tokens/{id}':
+    delete:
+      operationId: auth.revokeToken
+      tags:
+        - Auth
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: 'null'
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        404:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/not-found
+                  title:
+                    type: string
+                    const: 'Not Found'
+                  status:
+                    type: integer
+                    const: 404
+                  detail:
+                    type: string
+                    const: 'The personal access token was not found.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/settings:
+    get:
+      operationId: settings.show
+      summary: 'Phase 1 sample protected route. Full company settings arrive in Phase 2'
+      tags:
+        - Settings
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      currency: { type: string, const: BDT }
+                      points_earn_per: { type: integer, const: 100 }
+                      point_redeem_value: { type: integer, const: 1 }
+                      po_approval_threshold: { type: integer, const: 20000 }
+                      adjustment_approval_threshold: { type: integer, const: 5000 }
+                    required:
+                      - currency
+                      - points_earn_per
+                      - point_redeem_value
+                      - po_approval_threshold
+                      - adjustment_approval_threshold
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to view company settings.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+components:
+  schemas:
+    CreateTokenRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        abilities:
+          type: array
+          items:
+            type: string
+            enum:
+              - ''
+      required:
+        - name
+      title: CreateTokenRequest
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+      title: LoginRequest
+    PersonalAccessTokenResource:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        abilities:
+          type:
+            - array
+            - 'null'
+          items: []
+        last_used_at:
+          type:
+            - string
+            - 'null'
+        expires_at:
+          type:
+            - string
+            - 'null'
+        token:
+          type: string
+        created_at:
+          type:
+            - string
+            - 'null'
+      required:
+        - id
+        - name
+        - abilities
+        - last_used_at
+        - expires_at
+        - created_at
+      title: PersonalAccessTokenResource
+    UserResource:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        permissions:
+          type: array
+          items: []
+        department:
+          type: 'null'
+        warehouse_id:
+          type: 'null'
+      required:
+        - id
+        - name
+        - email
+        - roles
+        - permissions
+        - department
+        - warehouse_id
+      title: UserResource
+  responses:
+    ValidationException:
+      description: 'Validation error'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: 'Errors overview.'
+              errors:
+                type: object
+                description: 'A detailed description of each field that failed validation.'
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+            required:
+              - message
+              - errors
+    AuthenticationException:
+      description: Unauthenticated
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: 'Error overview.'
+            required:
+              - message
