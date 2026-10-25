@@ -15,8 +15,8 @@
 #   DEPLOY_PHP      - absolute path to PHP 8.3+ on the server (e.g. /usr/local/bin/ea-php83)
 #   DB_PORT         - MySQL port (default 3306)
 #
-# The workflow writes .env on the server from these secrets. It is never committed
-# and is not included in the uploaded archive. db:seed is not run: the seeder
+# The workflow writes .env from these secrets and sends it inside the same
+# archive as the app. It is never committed. db:seed is not run: the seeder
 # resets the admin password.
 
 name: CI
@@ -266,36 +266,7 @@ jobs:
           PORT="${DEPLOY_PORT:-22}"
           ssh-keyscan -p "${PORT}" -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: Upload application
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-        run: |
-          set -euo pipefail
-          PORT="${DEPLOY_PORT:-22}"
-          SSH_OPTS=(-i ~/.ssh/deploy_key -p "${PORT}" -o IdentitiesOnly=yes -o RequestTTY=no)
-          tar -C deploy -czf - . | ssh "${SSH_OPTS[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "bash --noprofile --norc -c 'mkdir -p \"${DEPLOY_PATH}\" && cd \"${DEPLOY_PATH}\" && rm -rf app bootstrap config database public resources routes vendor artisan composer.json composer.lock && mkdir -p storage/logs storage/framework/cache/data storage/framework/sessions storage/framework/views storage/app/public bootstrap/cache && tar -xzf -'"
-
-      - name: Upload production env
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-        run: |
-          set -euo pipefail
-          PORT="${DEPLOY_PORT:-22}"
-          # cPanel closes the SFTP session that current scp uses. The other
-          # deploys on this host write files through a shell instead.
-          ssh -i ~/.ssh/deploy_key -p "${PORT}" -o IdentitiesOnly=yes -o RequestTTY=no \
-            "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "bash --noprofile --norc -c 'umask 077; cat > \"${DEPLOY_PATH}/.env\" && test -s \"${DEPLOY_PATH}/.env\"'" \
-            < production.env
-
-      - name: Migrate and cache on server
+      - name: Upload, migrate, and cache
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
@@ -304,19 +275,17 @@ jobs:
           DEPLOY_PHP: ${{ secrets.DEPLOY_PHP }}
         run: |
           set -euo pipefail
-          PORT="${DEPLOY_PORT:-22}"
-          ssh -i ~/.ssh/deploy_key -p "${PORT}" -o IdentitiesOnly=yes -o RequestTTY=no \
-            "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            DEPLOY_PATH="${DEPLOY_PATH}" \
-            DEPLOY_PHP="${DEPLOY_PHP}" \
-            bash --noprofile --norc -s <<'REMOTE'
+          cp production.env deploy/.env
+          chmod 600 deploy/.env
+          cat > deploy/post-deploy.sh <<'REMOTE'
           set -euo pipefail
           cd "${DEPLOY_PATH}"
 
-          if [ ! -f .env ]; then
+          if [ ! -s .env ]; then
             echo "Missing ${DEPLOY_PATH}/.env"
             exit 1
           fi
+          chmod 600 .env
 
           PHP_BIN=""
           if [ -n "${DEPLOY_PHP:-}" ] && [ -x "${DEPLOY_PHP}" ]; then
@@ -358,5 +327,15 @@ jobs:
           "${PHP_BIN}" artisan config:cache
           "${PHP_BIN}" artisan route:cache
           "${PHP_BIN}" artisan view:cache
+          rm -f post-deploy.sh
           echo "Deploy finished."
           REMOTE
+          sed -i 's/\r$//' deploy/post-deploy.sh
+          PORT="${DEPLOY_PORT:-22}"
+          SSH_OPTS=(-i ~/.ssh/deploy_key -p "${PORT}" -o IdentitiesOnly=yes -o RequestTTY=no)
+          # One SSH session. A follow-up connection is closed by this host
+          # while the account is still busy from the extract.
+          tar -C deploy -czf - . | ssh "${SSH_OPTS[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            DEPLOY_PATH="${DEPLOY_PATH}" \
+            DEPLOY_PHP="${DEPLOY_PHP}" \
+            "bash --noprofile --norc -c 'mkdir -p \"${DEPLOY_PATH}\" && cd \"${DEPLOY_PATH}\" && rm -rf app bootstrap config database public resources routes vendor artisan composer.json composer.lock post-deploy.sh && mkdir -p storage/logs storage/framework/cache/data storage/framework/sessions storage/framework/views storage/app/public bootstrap/cache && tar -xzf - && bash --noprofile --norc ./post-deploy.sh'"
