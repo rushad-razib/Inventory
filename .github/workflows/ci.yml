@@ -288,9 +288,12 @@ jobs:
         run: |
           set -euo pipefail
           PORT="${DEPLOY_PORT:-22}"
-          scp -i ~/.ssh/deploy_key -P "${PORT}" -o IdentitiesOnly=yes \
-            production.env \
-            "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/.env"
+          # cPanel closes the SFTP session that current scp uses. The other
+          # deploys on this host write files through a shell instead.
+          ssh -i ~/.ssh/deploy_key -p "${PORT}" -o IdentitiesOnly=yes -o RequestTTY=no \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "bash --noprofile --norc -c 'umask 077; cat > \"${DEPLOY_PATH}/.env\" && test -s \"${DEPLOY_PATH}/.env\"'" \
+            < production.env
 
       - name: Migrate and cache on server
         env:
