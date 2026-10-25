@@ -132,11 +132,7 @@ jobs:
 
       - name: Install PHP dependencies
         working-directory: apps/api
-        run: |
-          set -euo pipefail
-          cp .env.example .env
-          php artisan key:generate --force
-          composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-progress
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-progress
 
       - name: Install JS dependencies
         working-directory: apps/web
