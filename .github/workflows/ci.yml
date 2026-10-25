@@ -55,6 +55,7 @@ jobs:
         run: php artisan test
       - name: OpenAPI drift
         run: |
+          php artisan migrate --force --no-interaction
           php artisan scramble:export --path=storage/app/openapi.json
           php bin/export-openapi.php
           git diff --exit-code -- ../../openapi/openapi.v1.yaml
