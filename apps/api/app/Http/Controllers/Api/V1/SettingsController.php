@@ -3,33 +3,62 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Settings\UpdateSettingsRequest;
+use App\Http\Resources\CompanySettingResource;
 use App\Http\Responses\ApiResponse;
-use App\Http\Responses\ProblemResponse;
+use App\Models\CompanySetting;
+use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SettingsController extends Controller
 {
-    /**
-     * Phase 1 sample protected route. Full company settings arrive in Phase 2.
-     */
     public function show(Request $request): JsonResponse
     {
+        return ApiResponse::data(new CompanySettingResource(CompanySetting::current()));
+    }
+
+    public function update(UpdateSettingsRequest $request, AuditLogger $auditLogger): JsonResponse
+    {
         if (! $request->user()->can('settings.manage')) {
-            return ProblemResponse::make(
-                'forbidden',
-                'Forbidden',
-                403,
-                'You do not have permission to view company settings.',
+            return $this->forbidden('You do not have permission to update company settings.');
+        }
+
+        $settings = CompanySetting::current();
+        $before = $settings->only([
+            'name',
+            'currency',
+            'po_approval_threshold',
+            'adjustment_approval_threshold',
+            'points_earn_per',
+            'point_redeem_value',
+        ]);
+
+        $settings->fill($request->validated());
+        // Currency is locked to BDT for Meridian.
+        $settings->currency = 'BDT';
+        $settings->save();
+
+        $after = $settings->only([
+            'name',
+            'currency',
+            'po_approval_threshold',
+            'adjustment_approval_threshold',
+            'points_earn_per',
+            'point_redeem_value',
+        ]);
+
+        if ($before !== $after) {
+            $auditLogger->write(
+                'settings.updated',
+                $settings,
+                $request->user(),
+                $before,
+                $after,
+                $request,
             );
         }
 
-        return ApiResponse::data([
-            'currency' => 'BDT',
-            'points_earn_per' => 100,
-            'point_redeem_value' => 1,
-            'po_approval_threshold' => 20000,
-            'adjustment_approval_threshold' => 5000,
-        ]);
+        return ApiResponse::data(new CompanySettingResource($settings->refresh()));
     }
 }

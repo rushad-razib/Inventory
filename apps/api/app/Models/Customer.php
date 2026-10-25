@@ -1,0 +1,27 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
+
+class Customer extends Model
+{
+    use HasUuids;
+
+    protected $fillable = [
+        'mobile',
+        'name',
+        'points_balance',
+    ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'points_balance' => 'integer',
+        ];
+    }
+}

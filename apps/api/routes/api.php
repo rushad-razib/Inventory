@@ -1,7 +1,18 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CategoryController;
+use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\DepartmentController;
+use App\Http\Controllers\Api\V1\ImageController;
+use App\Http\Controllers\Api\V1\ProductController;
+use App\Http\Controllers\Api\V1\ProductImageController;
 use App\Http\Controllers\Api\V1\SettingsController;
+use App\Http\Controllers\Api\V1\SupplierController;
+use App\Http\Controllers\Api\V1\SupplierProductController;
+use App\Http\Controllers\Api\V1\UserController;
+use App\Http\Controllers\Api\V1\UserImageController;
+use App\Http\Controllers\Api\V1\WarehouseController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -10,8 +21,56 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('web');
         Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::get('/auth/me/image', [AuthController::class, 'meImage']);
         Route::post('/auth/tokens', [AuthController::class, 'createToken']);
         Route::delete('/auth/tokens/{id}', [AuthController::class, 'revokeToken']);
+
         Route::get('/settings', [SettingsController::class, 'show']);
+        Route::patch('/settings', [SettingsController::class, 'update']);
+
+        Route::get('/departments', [DepartmentController::class, 'index']);
+        Route::post('/departments', [DepartmentController::class, 'store']);
+        Route::patch('/departments/{department}', [DepartmentController::class, 'update']);
+
+        Route::get('/warehouses', [WarehouseController::class, 'index']);
+        Route::post('/warehouses', [WarehouseController::class, 'store']);
+        Route::patch('/warehouses/{warehouse}', [WarehouseController::class, 'update']);
+
+        Route::get('/users', [UserController::class, 'index']);
+        Route::post('/users', [UserController::class, 'store']);
+        Route::get('/users/{user}', [UserController::class, 'show']);
+        Route::patch('/users/{user}', [UserController::class, 'update']);
+        Route::get('/users/{user}/images', [UserImageController::class, 'index']);
+        Route::post('/users/{user}/images', [UserImageController::class, 'store']);
+
+        Route::get('/categories', [CategoryController::class, 'index']);
+        Route::post('/categories', [CategoryController::class, 'store']);
+        Route::patch('/categories/{category}', [CategoryController::class, 'update']);
+
+        Route::get('/products/lookup', [ProductController::class, 'lookup']);
+        Route::get('/products', [ProductController::class, 'index']);
+        Route::post('/products', [ProductController::class, 'store']);
+        Route::get('/products/{product}', [ProductController::class, 'show']);
+        Route::patch('/products/{product}', [ProductController::class, 'update']);
+        Route::get('/products/{product}/images', [ProductImageController::class, 'index']);
+        Route::post('/products/{product}/images', [ProductImageController::class, 'store']);
+
+        Route::get('/suppliers', [SupplierController::class, 'index']);
+        Route::post('/suppliers', [SupplierController::class, 'store']);
+        Route::get('/suppliers/{supplier}', [SupplierController::class, 'show']);
+        Route::patch('/suppliers/{supplier}', [SupplierController::class, 'update']);
+        Route::get('/suppliers/{supplier}/products', [SupplierProductController::class, 'index']);
+        Route::post('/suppliers/{supplier}/products', [SupplierProductController::class, 'store']);
+        Route::patch('/supplier-products/{supplierProduct}', [SupplierProductController::class, 'update']);
+
+        Route::get('/customers/lookup', [CustomerController::class, 'lookup']);
+        Route::get('/customers', [CustomerController::class, 'index']);
+        Route::post('/customers', [CustomerController::class, 'store']);
+        Route::get('/customers/{customer}', [CustomerController::class, 'show']);
+        Route::patch('/customers/{customer}', [CustomerController::class, 'update']);
+        Route::get('/customers/{customer}/point-entries', [CustomerController::class, 'pointEntries']);
+
+        Route::patch('/images/{image}', [ImageController::class, 'update']);
+        Route::delete('/images/{image}', [ImageController::class, 'destroy']);
     });
 });

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Database\Seeders\CatalogSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -82,12 +83,29 @@ it('logs out the session', function () {
     $this->assertGuest('web');
 });
 
-it('forbids settings for a cashier without settings.manage', function () {
+it('allows a cashier to read settings without settings.manage', function () {
+    $this->seed(CatalogSeeder::class);
+
     $user = User::factory()->create();
     $user->assignRole('Cashier');
     app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
     $response = $this->actingAs($user)->getJson('/api/v1/settings');
+
+    $response->assertOk()
+        ->assertJsonPath('data.currency', 'BDT');
+});
+
+it('forbids a cashier from patching settings without settings.manage', function () {
+    $this->seed(CatalogSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Cashier');
+    app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+    $response = $this->actingAs($user)->patchJson('/api/v1/settings', [
+        'points_earn_per' => 50,
+    ]);
 
     $response->assertForbidden()
         ->assertHeader('Content-Type', 'application/problem+json')
@@ -95,6 +113,8 @@ it('forbids settings for a cashier without settings.manage', function () {
 });
 
 it('allows settings for an admin', function () {
+    $this->seed(CatalogSeeder::class);
+
     $user = User::factory()->create();
     $user->assignRole('Admin');
     app()[PermissionRegistrar::class]->forgetCachedPermissions();

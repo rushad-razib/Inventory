@@ -4,22 +4,145 @@ import type { paths } from "./api-types";
 /** Empty string uses the Vite proxy in development (same-origin cookies). */
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
+export type AuthDepartment = {
+  id: string;
+  name: string;
+};
+
 export type AuthUser = {
   id: string;
   name: string;
   email: string;
   roles: string[];
   permissions: string[];
-  department: string | null;
+  department: AuthDepartment | null;
   warehouse_id: string | null;
 };
 
-const client = createClient<paths>({
+export type PaginatedMeta = {
+  page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+};
+
+export type Product = {
+  id: string;
+  sku: string;
+  barcode: string | null;
+  name: string;
+  description: string | null;
+  category_id: string | null;
+  unit_of_measure: string;
+  sell_price: number;
+  reorder_point: number;
+  reorder_quantity: number;
+  preferred_supplier_id: string | null;
+  track_stock: boolean;
+  is_active: boolean;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type Category = {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type Warehouse = {
+  id: string;
+  code: string;
+  name: string;
+  address: string | null;
+  is_default: boolean;
+  is_active: boolean;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type Supplier = {
+  id: string;
+  code: string;
+  name: string;
+  contact: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  supply_mode: string;
+  payment_terms_days: number;
+  lead_time_days: number;
+  status: string;
+  notes: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type SupplierProduct = {
+  id: string;
+  supplier_id: string;
+  product_id: string;
+  supplier_sku: string | null;
+  agreed_unit_cost: number;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type Customer = {
+  id: string;
+  mobile: string;
+  name: string | null;
+  points_balance: number;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type Department = {
+  id: string;
+  name: string;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type CatalogUser = {
+  id: string;
+  name: string;
+  email: string;
+  roles: string[];
+  permissions: string[];
+  department: AuthDepartment | null;
+  warehouse_id: string | null;
+  is_active: boolean;
+};
+
+export type CompanySettings = {
+  id: string;
+  name: string;
+  currency: string;
+  po_approval_threshold: number;
+  adjustment_approval_threshold: number;
+  points_earn_per: number;
+  point_redeem_value: number;
+  updated_at: string | null;
+};
+
+export type ImageAsset = {
+  id: string;
+  url: string;
+  mime_type: string;
+  byte_size: number;
+  sort_order: number;
+  created_at: string | null;
+};
+
+export const apiClient = createClient<paths>({
   baseUrl: `${API_BASE}/api`,
   credentials: "include",
 });
 
-client.use({
+apiClient.use({
   onRequest({ request }) {
     request.headers.set("Accept", "application/json");
     request.headers.set("X-Requested-With", "XMLHttpRequest");
@@ -51,7 +174,7 @@ function toAuthUser(user: {
   email: string;
   roles: string[];
   permissions: readonly string[];
-  department: string | null;
+  department: AuthDepartment | null;
   warehouse_id: string | null;
 }): AuthUser {
   return {
@@ -65,52 +188,299 @@ function toAuthUser(user: {
   };
 }
 
-function problemMessage(error: unknown, status: number): string {
+export function apiErrorMessage(error: unknown, status: number): string {
   if (error && typeof error === "object") {
-    const record = error as { detail?: string; title?: string; message?: string };
+    const record = error as {
+      detail?: string;
+      title?: string;
+      message?: string;
+      errors?: Record<string, string[]>;
+    };
     if (record.detail) {
       return record.detail;
     }
-    if (record.title) {
-      return record.title;
-    }
     if (record.message) {
       return record.message;
+    }
+    if (record.errors) {
+      const first = Object.values(record.errors).flat()[0];
+      if (first) {
+        return first;
+      }
+    }
+    if (record.title) {
+      return record.title;
     }
   }
 
   return `Request failed (${status})`;
 }
 
+function assertData<T>(
+  data: T | undefined,
+  error: unknown,
+  status: number,
+): T {
+  if (error || data === undefined) {
+    throw new Error(apiErrorMessage(error, status));
+  }
+  return data;
+}
+
 export async function login(email: string, password: string): Promise<AuthUser> {
   await ensureCsrfCookie();
 
-  const { data, error, response } = await client.POST("/v1/auth/login", {
+  const { data, error, response } = await apiClient.POST("/v1/auth/login", {
     body: { email, password },
   });
 
-  if (error || !data?.data) {
-    throw new Error(problemMessage(error, response.status));
-  }
-
-  // Scramble emits narrow permission/null shapes; normalize at the boundary.
-  return toAuthUser(data.data as unknown as AuthUser);
+  const payload = assertData(data, error, response.status);
+  return toAuthUser(payload.data as unknown as AuthUser);
 }
 
 export async function logout(): Promise<void> {
-  const { error, response } = await client.POST("/v1/auth/logout");
+  const { error, response } = await apiClient.POST("/v1/auth/logout");
 
   if (error) {
-    throw new Error(problemMessage(error, response.status));
+    throw new Error(apiErrorMessage(error, response.status));
   }
 }
 
 export async function fetchMe(): Promise<AuthUser> {
-  const { data, error, response } = await client.GET("/v1/auth/me");
+  const { data, error, response } = await apiClient.GET("/v1/auth/me");
+  const payload = assertData(data, error, response.status);
+  return toAuthUser(payload.data as unknown as AuthUser);
+}
 
-  if (error || !data?.data) {
-    throw new Error(problemMessage(error, response.status));
-  }
+export async function listProducts(): Promise<{ data: Product[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/products");
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as Product[],
+    meta: payload.meta,
+  };
+}
 
-  return toAuthUser(data.data as unknown as AuthUser);
+export async function createProduct(body: {
+  sku: string;
+  name: string;
+  barcode?: string | null;
+  sell_price: number;
+}): Promise<Product> {
+  const { data, error, response } = await apiClient.POST("/v1/products", { body });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Product;
+}
+
+export async function getProduct(id: string): Promise<Product> {
+  const { data, error, response } = await apiClient.GET("/v1/products/{product}", {
+    params: { path: { product: id } },
+  });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Product;
+}
+
+export async function listProductImages(productId: string): Promise<ImageAsset[]> {
+  const { data, error, response } = await apiClient.GET("/v1/products/{product}/images", {
+    params: { path: { product: productId } },
+  });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as ImageAsset[];
+}
+
+export async function uploadProductImage(productId: string, file: File): Promise<ImageAsset> {
+  const { data, error, response } = await apiClient.POST("/v1/products/{product}/images", {
+    params: { path: { product: productId } },
+    body: { image: file as unknown as string },
+    bodySerializer(body) {
+      const form = new FormData();
+      form.append("image", body.image as unknown as Blob);
+      return form;
+    },
+  });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as ImageAsset;
+}
+
+export async function listCategories(): Promise<{ data: Category[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/categories");
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as Category[],
+    meta: payload.meta,
+  };
+}
+
+export async function createCategory(body: { name: string; parent_id?: string | null }): Promise<Category> {
+  const { data, error, response } = await apiClient.POST("/v1/categories", { body });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Category;
+}
+
+export async function listWarehouses(): Promise<{ data: Warehouse[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/warehouses");
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as Warehouse[],
+    meta: payload.meta,
+  };
+}
+
+export async function createWarehouse(body: {
+  code: string;
+  name: string;
+  address?: string | null;
+}): Promise<Warehouse> {
+  const { data, error, response } = await apiClient.POST("/v1/warehouses", { body });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Warehouse;
+}
+
+export async function listSuppliers(): Promise<{ data: Supplier[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/suppliers");
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as Supplier[],
+    meta: payload.meta,
+  };
+}
+
+export async function createSupplier(body: {
+  code: string;
+  name: string;
+  supply_mode: "outright" | "consignment";
+  status: "active" | "inactive";
+  contact?: string | null;
+  email?: string | null;
+  phone?: string | null;
+}): Promise<Supplier> {
+  const { data, error, response } = await apiClient.POST("/v1/suppliers", { body });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Supplier;
+}
+
+export async function listSupplierProducts(
+  supplierId: string,
+): Promise<{ data: SupplierProduct[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/suppliers/{supplier}/products", {
+    params: { path: { supplier: supplierId } },
+  });
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as SupplierProduct[],
+    meta: payload.meta,
+  };
+}
+
+export async function createSupplierProduct(
+  supplierId: string,
+  body: { product_id: string; agreed_unit_cost: number; supplier_sku?: string | null },
+): Promise<SupplierProduct> {
+  const { data, error, response } = await apiClient.POST("/v1/suppliers/{supplier}/products", {
+    params: { path: { supplier: supplierId } },
+    body,
+  });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as SupplierProduct;
+}
+
+export async function listCustomers(): Promise<{ data: Customer[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/customers");
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as Customer[],
+    meta: payload.meta,
+  };
+}
+
+export async function createCustomer(body: {
+  mobile: string;
+  name?: string | null;
+}): Promise<Customer> {
+  const { data, error, response } = await apiClient.POST("/v1/customers", { body });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Customer;
+}
+
+export async function lookupCustomer(mobile: string): Promise<Customer | null> {
+  const { data, error, response } = await apiClient.GET("/v1/customers/lookup", {
+    params: { query: { mobile } },
+  });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Customer | null;
+}
+
+export async function listUsers(): Promise<{ data: CatalogUser[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/users");
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as CatalogUser[],
+    meta: payload.meta,
+  };
+}
+
+export async function createUser(body: {
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+}): Promise<CatalogUser> {
+  const { data, error, response } = await apiClient.POST("/v1/users", { body });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as CatalogUser;
+}
+
+export async function listUserImages(userId: string): Promise<ImageAsset[]> {
+  const { data, error, response } = await apiClient.GET("/v1/users/{user}/images", {
+    params: { path: { user: userId } },
+  });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as ImageAsset[];
+}
+
+export async function uploadUserImage(userId: string, file: File): Promise<ImageAsset> {
+  const { data, error, response } = await apiClient.POST("/v1/users/{user}/images", {
+    params: { path: { user: userId } },
+    body: { image: file as unknown as string },
+    bodySerializer(body) {
+      const form = new FormData();
+      form.append("image", body.image as unknown as Blob);
+      return form;
+    },
+  });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as ImageAsset;
+}
+
+export async function listDepartments(): Promise<{ data: Department[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/departments");
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as Department[],
+    meta: payload.meta,
+  };
+}
+
+export async function createDepartment(body: { name: string }): Promise<Department> {
+  const { data, error, response } = await apiClient.POST("/v1/departments", { body });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Department;
+}
+
+export async function fetchSettings(): Promise<CompanySettings> {
+  const { data, error, response } = await apiClient.GET("/v1/settings");
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as CompanySettings;
+}
+
+export async function updateSettings(body: {
+  name?: string;
+  po_approval_threshold?: number;
+  adjustment_approval_threshold?: number;
+  points_earn_per?: number;
+  point_redeem_value?: number;
+}): Promise<CompanySettings> {
+  const { data, error, response } = await apiClient.PATCH("/v1/settings", { body });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as CompanySettings;
 }

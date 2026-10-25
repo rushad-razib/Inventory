@@ -26,7 +26,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/UserResource'
+                    type: string
                   meta:
                     type: string
                 required:
@@ -48,7 +48,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    type: 'null'
+                    type: string
                   meta:
                     type: string
                 required:
@@ -70,7 +70,29 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/UserResource'
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/auth/me/image:
+    get:
+      operationId: auth.meImage
+      tags:
+        - Auth
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
                   meta:
                     type: string
                 required:
@@ -98,7 +120,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/PersonalAccessTokenResource'
+                    type: string
                   meta:
                     type: string
                 required:
@@ -129,7 +151,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    type: 'null'
+                    type: string
                   meta:
                     type: string
                 required:
@@ -164,12 +186,11 @@ paths:
                   - errors
         401:
           $ref: '#/components/responses/AuthenticationException'
-  /v1/settings:
+  /v1/categories:
     get:
-      operationId: settings.show
-      summary: 'Phase 1 sample protected route. Full company settings arrive in Phase 2'
+      operationId: category.index
       tags:
-        - Settings
+        - Category
       responses:
         200:
           description: ''
@@ -179,19 +200,44 @@ paths:
                 type: object
                 properties:
                   data:
+                    type: string
+                  meta:
                     type: object
                     properties:
-                      currency: { type: string, const: BDT }
-                      points_earn_per: { type: integer, const: 100 }
-                      point_redeem_value: { type: integer, const: 1 }
-                      po_approval_threshold: { type: integer, const: 20000 }
-                      adjustment_approval_threshold: { type: integer, const: 5000 }
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
                     required:
-                      - currency
-                      - points_earn_per
-                      - point_redeem_value
-                      - po_approval_threshold
-                      - adjustment_approval_threshold
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: category.store
+      tags:
+        - Category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreCategoryRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
                   meta:
                     type: string
                 required:
@@ -215,7 +261,7 @@ paths:
                     const: 403
                   detail:
                     type: string
-                    const: 'You do not have permission to view company settings.'
+                    const: 'You do not have permission to create categories.'
                   errors:
                     type: string
                 required:
@@ -226,6 +272,2179 @@ paths:
                   - errors
         401:
           $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/categories/{category}':
+    patch:
+      operationId: category.update
+      tags:
+        - Category
+      parameters:
+        -
+          name: category
+          in: path
+          required: true
+          description: 'The category ID'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCategoryRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to update categories.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  /v1/customers/lookup:
+    get:
+      operationId: customer.lookup
+      tags:
+        - Customer
+      parameters:
+        -
+          name: mobile
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        422:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/validation-failed
+                  title:
+                    type: string
+                    const: 'Validation Failed'
+                  status:
+                    type: integer
+                    const: 422
+                  detail:
+                    type: string
+                    const: 'One or more fields failed validation.'
+                  errors:
+                    type: object
+                    properties:
+                      mobile: { type: array, prefixItems: [{ type: string }], minItems: 1, maxItems: 1 }
+                    required:
+                      - mobile
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to look up customers.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/customers:
+    get:
+      operationId: customer.index
+      tags:
+        - Customer
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to list customers.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: customer.store
+      tags:
+        - Customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreCustomerRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to create customers.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/customers/{customer}':
+    get:
+      operationId: customer.show
+      tags:
+        - Customer
+      parameters:
+        -
+          name: customer
+          in: path
+          required: true
+          description: 'The customer ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to view customers.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    patch:
+      operationId: customer.update
+      tags:
+        - Customer
+      parameters:
+        -
+          name: customer
+          in: path
+          required: true
+          description: 'The customer ID'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to update customers.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/customers/{customer}/point-entries':
+    get:
+      operationId: customer.pointEntries
+      tags:
+        - Customer
+      parameters:
+        -
+          name: customer
+          in: path
+          required: true
+          description: 'The customer ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: string
+                    minItems: 0
+                    maxItems: 0
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to view point entries.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/departments:
+    get:
+      operationId: department.index
+      tags:
+        - Department
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: department.store
+      tags:
+        - Department
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreDepartmentRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to create departments.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/departments/{department}':
+    patch:
+      operationId: department.update
+      tags:
+        - Department
+      parameters:
+        -
+          name: department
+          in: path
+          required: true
+          description: 'The department ID'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDepartmentRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to update departments.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/images/{image}':
+    patch:
+      operationId: image.update
+      tags:
+        - Image
+      parameters:
+        -
+          name: image
+          in: path
+          required: true
+          description: 'The image ID'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateImageRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: image.destroy
+      tags:
+        - Image
+      parameters:
+        -
+          name: image
+          in: path
+          required: true
+          description: 'The image ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/products/lookup:
+    get:
+      operationId: product.lookup
+      tags:
+        - Product
+      parameters:
+        -
+          name: barcode
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to look up products.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/products:
+    get:
+      operationId: product.index
+      tags:
+        - Product
+      parameters:
+        -
+          name: 'filter[sku]'
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to list products.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: product.store
+      tags:
+        - Product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreProductRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to create products.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/products/{product}':
+    get:
+      operationId: product.show
+      tags:
+        - Product
+      parameters:
+        -
+          name: product
+          in: path
+          required: true
+          description: 'The product ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to view products.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    patch:
+      operationId: product.update
+      tags:
+        - Product
+      parameters:
+        -
+          name: product
+          in: path
+          required: true
+          description: 'The product ID'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to update products.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/products/{product}/images':
+    get:
+      operationId: productImage.index
+      tags:
+        - ProductImage
+      parameters:
+        -
+          name: product
+          in: path
+          required: true
+          description: 'The product ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to list product images.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: productImage.store
+      tags:
+        - ProductImage
+      parameters:
+        -
+          name: product
+          in: path
+          required: true
+          description: 'The product ID'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StoreImageRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to upload product images.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  /v1/settings:
+    get:
+      operationId: settings.show
+      tags:
+        - Settings
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    patch:
+      operationId: settings.update
+      tags:
+        - Settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingsRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to update company settings.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  /v1/suppliers:
+    get:
+      operationId: supplier.index
+      tags:
+        - Supplier
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to list suppliers.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: supplier.store
+      tags:
+        - Supplier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreSupplierRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to create suppliers.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/suppliers/{supplier}':
+    get:
+      operationId: supplier.show
+      tags:
+        - Supplier
+      parameters:
+        -
+          name: supplier
+          in: path
+          required: true
+          description: 'The supplier ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to view suppliers.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    patch:
+      operationId: supplier.update
+      tags:
+        - Supplier
+      parameters:
+        -
+          name: supplier
+          in: path
+          required: true
+          description: 'The supplier ID'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSupplierRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to update suppliers.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/suppliers/{supplier}/products':
+    get:
+      operationId: supplierProduct.index
+      tags:
+        - SupplierProduct
+      parameters:
+        -
+          name: supplier
+          in: path
+          required: true
+          description: 'The supplier ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to list supplier products.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: supplierProduct.store
+      tags:
+        - SupplierProduct
+      parameters:
+        -
+          name: supplier
+          in: path
+          required: true
+          description: 'The supplier ID'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreSupplierProductRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to create supplier products.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/supplier-products/{supplierProduct}':
+    patch:
+      operationId: supplierProduct.update
+      tags:
+        - SupplierProduct
+      parameters:
+        -
+          name: supplierProduct
+          in: path
+          required: true
+          description: 'The supplier product ID'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSupplierProductRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to update supplier products.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  /v1/users:
+    get:
+      operationId: user.index
+      tags:
+        - User
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to list users.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: user.store
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreUserRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to create users.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/users/{user}':
+    get:
+      operationId: user.show
+      tags:
+        - User
+      parameters:
+        -
+          name: user
+          in: path
+          required: true
+          description: 'The user ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to view users.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    patch:
+      operationId: user.update
+      tags:
+        - User
+      parameters:
+        -
+          name: user
+          in: path
+          required: true
+          description: 'The user ID'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to update users.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/users/{user}/images':
+    get:
+      operationId: userImage.index
+      tags:
+        - UserImage
+      parameters:
+        -
+          name: user
+          in: path
+          required: true
+          description: 'The user ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to list user images.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: userImage.store
+      tags:
+        - UserImage
+      parameters:
+        -
+          name: user
+          in: path
+          required: true
+          description: 'The user ID'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StoreImageRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to upload user images.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  /v1/warehouses:
+    get:
+      operationId: warehouse.index
+      tags:
+        - Warehouse
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to list warehouses.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: warehouse.store
+      tags:
+        - Warehouse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreWarehouseRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to create warehouses.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/warehouses/{warehouse}':
+    patch:
+      operationId: warehouse.update
+      tags:
+        - Warehouse
+      parameters:
+        -
+          name: warehouse
+          in: path
+          required: true
+          description: 'The warehouse ID'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWarehouseRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to update warehouses.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
 components:
   schemas:
     CreateTokenRequest:
@@ -255,69 +2474,451 @@ components:
         - email
         - password
       title: LoginRequest
-    PersonalAccessTokenResource:
+    StoreCategoryRequest:
       type: object
       properties:
-        id:
-          type: integer
         name:
           type: string
-        abilities:
-          type:
-            - array
-            - 'null'
-          items: []
-        last_used_at:
+          maxLength: 255
+        parent_id:
           type:
             - string
             - 'null'
-        expires_at:
-          type:
-            - string
-            - 'null'
-        token:
+          format: uuid
+      required:
+        - name
+      title: StoreCategoryRequest
+    StoreCustomerRequest:
+      type: object
+      properties:
+        mobile:
           type: string
-        created_at:
+          pattern: '^\+8801[3-9]\d{8}$'
+        name:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+      required:
+        - mobile
+      title: StoreCustomerRequest
+    StoreDepartmentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+      required:
+        - name
+      title: StoreDepartmentRequest
+    StoreImageRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          format: binary
+          contentMediaType: application/octet-stream
+          description: 'Maximum file size: 5120 kilobytes.'
+        sort_order:
+          type: integer
+          minimum: 0
+      required:
+        - image
+      title: StoreImageRequest
+    StoreProductRequest:
+      type: object
+      properties:
+        sku:
+          type: string
+          maxLength: 255
+        barcode:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type:
+            - string
+            - 'null'
+        category_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        unit_of_measure:
+          type: string
+          maxLength: 255
+        sell_price:
+          type: integer
+          minimum: 0
+        reorder_point:
+          type: integer
+          minimum: 0
+        reorder_quantity:
+          type: integer
+          minimum: 0
+        preferred_supplier_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        track_stock:
+          type: boolean
+        is_active:
+          type: boolean
+      required:
+        - sku
+        - name
+        - sell_price
+      title: StoreProductRequest
+    StoreSupplierProductRequest:
+      type: object
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        supplier_sku:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        agreed_unit_cost:
+          type: integer
+          minimum: 0
+      required:
+        - product_id
+        - agreed_unit_cost
+      title: StoreSupplierProductRequest
+    StoreSupplierRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 255
+        name:
+          type: string
+          maxLength: 255
+        contact:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        email:
+          type:
+            - string
+            - 'null'
+          format: email
+          maxLength: 255
+        phone:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        address:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        supply_mode:
+          type: string
+          enum:
+            - outright
+            - consignment
+        payment_terms_days:
+          type: integer
+          minimum: 0
+        lead_time_days:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum:
+            - active
+            - inactive
+        notes:
           type:
             - string
             - 'null'
       required:
-        - id
+        - code
         - name
-        - abilities
-        - last_used_at
-        - expires_at
-        - created_at
-      title: PersonalAccessTokenResource
-    UserResource:
+        - supply_mode
+        - status
+      title: StoreSupplierRequest
+    StoreUserRequest:
       type: object
       properties:
-        id:
-          type: string
         name:
           type: string
+          maxLength: 255
         email:
           type: string
-        roles:
-          type: array
-          items:
-            type: string
-        permissions:
-          type: array
-          items: []
-        department:
-          type: 'null'
+          format: email
+          maxLength: 255
+        password:
+          type: string
+          minLength: 8
+        department_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
         warehouse_id:
-          type: 'null'
+          type:
+            - string
+            - 'null'
+          format: uuid
+        is_active:
+          type: boolean
+        role:
+          type: string
       required:
-        - id
         - name
         - email
-        - roles
-        - permissions
-        - department
-        - warehouse_id
-      title: UserResource
+        - password
+        - role
+      title: StoreUserRequest
+    StoreWarehouseRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 255
+        name:
+          type: string
+          maxLength: 255
+        address:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        is_default:
+          type: boolean
+        is_active:
+          type: boolean
+      required:
+        - code
+        - name
+      title: StoreWarehouseRequest
+    UpdateCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        parent_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+      title: UpdateCategoryRequest
+    UpdateCustomerRequest:
+      type: object
+      properties:
+        mobile:
+          type: string
+          pattern: '^\+8801[3-9]\d{8}$'
+        name:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+      title: UpdateCustomerRequest
+    UpdateDepartmentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+      title: UpdateDepartmentRequest
+    UpdateImageRequest:
+      type: object
+      properties:
+        sort_order:
+          type: integer
+          minimum: 0
+      required:
+        - sort_order
+      title: UpdateImageRequest
+    UpdateProductRequest:
+      type: object
+      properties:
+        sku:
+          type: string
+          maxLength: 255
+        barcode:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type:
+            - string
+            - 'null'
+        category_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        unit_of_measure:
+          type: string
+          maxLength: 255
+        sell_price:
+          type: integer
+          minimum: 0
+        reorder_point:
+          type: integer
+          minimum: 0
+        reorder_quantity:
+          type: integer
+          minimum: 0
+        preferred_supplier_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        track_stock:
+          type: boolean
+        is_active:
+          type: boolean
+      title: UpdateProductRequest
+    UpdateSettingsRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        po_approval_threshold:
+          type: integer
+          minimum: 0
+        adjustment_approval_threshold:
+          type: integer
+          minimum: 0
+        points_earn_per:
+          type: integer
+          minimum: 1
+        point_redeem_value:
+          type: integer
+          minimum: 1
+      title: UpdateSettingsRequest
+    UpdateSupplierProductRequest:
+      type: object
+      properties:
+        supplier_sku:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        agreed_unit_cost:
+          type: integer
+          minimum: 0
+      title: UpdateSupplierProductRequest
+    UpdateSupplierRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 255
+        name:
+          type: string
+          maxLength: 255
+        contact:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        email:
+          type:
+            - string
+            - 'null'
+          format: email
+          maxLength: 255
+        phone:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        address:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        supply_mode:
+          type: string
+          enum:
+            - outright
+            - consignment
+        payment_terms_days:
+          type: integer
+          minimum: 0
+        lead_time_days:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum:
+            - active
+            - inactive
+        notes:
+          type:
+            - string
+            - 'null'
+      title: UpdateSupplierRequest
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        password:
+          type:
+            - string
+            - 'null'
+          minLength: 8
+        department_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        warehouse_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        is_active:
+          type: boolean
+        role:
+          type: string
+      title: UpdateUserRequest
+    UpdateWarehouseRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 255
+        name:
+          type: string
+          maxLength: 255
+        address:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        is_default:
+          type: boolean
+        is_active:
+          type: boolean
+      title: UpdateWarehouseRequest
   responses:
     ValidationException:
       description: 'Validation error'
@@ -341,6 +2942,18 @@ components:
               - errors
     AuthenticationException:
       description: Unauthenticated
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: 'Error overview.'
+            required:
+              - message
+    ModelNotFoundException:
+      description: 'Not found'
       content:
         application/json:
           schema:

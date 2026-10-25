@@ -16,20 +16,29 @@ class UserResource extends JsonResource
      *     email: string,
      *     roles: list<string>,
      *     permissions: list<string>,
-     *     department: string|null,
-     *     warehouse_id: string|null
+     *     department: array{id: string, name: string}|null,
+     *     warehouse_id: string|null,
+     *     is_active: bool
      * }
      */
     public function toArray(Request $request): array
     {
+        $this->resource->loadMissing('department');
+
         return [
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
             'roles' => $this->getRoleNames()->values()->all(),
             'permissions' => $this->getAllPermissions()->pluck('name')->values()->all(),
-            'department' => null,
-            'warehouse_id' => null,
+            'department' => $this->department
+                ? [
+                    'id' => $this->department->id,
+                    'name' => $this->department->name,
+                ]
+                : null,
+            'warehouse_id' => $this->warehouse_id,
+            'is_active' => (bool) $this->is_active,
         ];
     }
 }

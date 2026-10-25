@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\CreateTokenRequest;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Resources\ImageResource;
 use App\Http\Resources\PersonalAccessTokenResource;
 use App\Http\Resources\UserResource;
 use App\Http\Responses\ApiResponse;
@@ -46,6 +47,13 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         return ApiResponse::data(new UserResource($request->user()->loadMissing('roles', 'permissions')));
+    }
+
+    public function meImage(Request $request): JsonResponse
+    {
+        $image = $request->user()->images()->orderBy('sort_order')->first();
+
+        return ApiResponse::data($image ? new ImageResource($image) : null);
     }
 
     public function createToken(CreateTokenRequest $request): JsonResponse
