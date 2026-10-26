@@ -296,8 +296,8 @@ jobs:
               /opt/cpanel/ea-php83/root/usr/bin/php \
               /usr/local/bin/ea-php84 \
               /opt/cpanel/ea-php84/root/usr/bin/php \
-              /usr/local/bin/ea-php82 \
-              /opt/cpanel/ea-php82/root/usr/bin/php \
+              /usr/local/bin/ea-php85 \
+              /opt/cpanel/ea-php85/root/usr/bin/php \
               php
             do
               if [ -x "${candidate}" ] || command -v "${candidate}" >/dev/null 2>&1; then
@@ -308,13 +308,13 @@ jobs:
           fi
 
           if [ -z "${PHP_BIN}" ]; then
-            echo "No PHP binary found. Set DEPLOY_PHP to the PHP 8.3 path (e.g. /usr/local/bin/ea-php83)."
+            echo "No PHP binary found. Set MultiPHP to 8.3+ and DEPLOY_PHP to that path (e.g. /usr/local/bin/ea-php83)."
             exit 1
           fi
 
           echo "Using PHP: ${PHP_BIN} ($("${PHP_BIN}" -r 'echo PHP_VERSION;'))"
-          "${PHP_BIN}" -r 'exit(version_compare(PHP_VERSION, "8.2.0", ">=") ? 0 : 1);' \
-            || { echo "Need PHP >= 8.2. Set MultiPHP to 8.3 and DEPLOY_PHP to that binary."; exit 1; }
+          "${PHP_BIN}" -r 'exit(version_compare(PHP_VERSION, "8.3.0", ">=") ? 0 : 1);' \
+            || { echo "Need PHP >= 8.3. Set MultiPHP to 8.3+ (not 8.2) and DEPLOY_PHP to that binary."; exit 1; }
 
           mkdir -p storage/logs storage/framework/cache/data storage/framework/sessions storage/framework/views storage/app/public bootstrap/cache
           chmod -R ug+rwx storage bootstrap/cache || true
