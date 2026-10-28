@@ -1,12 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
 import {
   createUser,
+  listDepartments,
   listUserImages,
   listUsers,
+  listWarehouses,
+  updateUser,
   uploadUserImage,
   type CatalogUser,
 } from "../lib/api";
@@ -19,6 +22,15 @@ const schema = z.object({
   email: z.email("Valid email required"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   role: z.enum(ROLES),
+  department_id: z.string().optional(),
+  warehouse_id: z.string().optional(),
+  is_active: z.boolean(),
+});
+
+const editSchema = schema.extend({
+  password: z.string().refine((value) => value === "" || value.length >= 8, {
+    message: "Password must be at least 8 characters",
+  }),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -27,11 +39,23 @@ export function UsersPage() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const usersQuery = useQuery({
     queryKey: ["users"],
     queryFn: listUsers,
+  });
+
+  const departmentsQuery = useQuery({
+    queryKey: ["departments"],
+    queryFn: listDepartments,
+  });
+
+  const warehousesQuery = useQuery({
+    queryKey: ["warehouses"],
+    queryFn: listWarehouses,
   });
 
   const imagesQuery = useQuery({
@@ -52,6 +76,22 @@ export function UsersPage() {
       email: "",
       password: "",
       role: "Cashier",
+      department_id: "",
+      warehouse_id: "",
+      is_active: true,
+    },
+  });
+
+  const editForm = useForm<FormValues>({
+    resolver: zodResolver(editSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      role: "Cashier",
+      department_id: "",
+      warehouse_id: "",
+      is_active: true,
     },
   });
 
@@ -59,11 +99,42 @@ export function UsersPage() {
     mutationFn: createUser,
     onSuccess: async (created) => {
       await queryClient.invalidateQueries({ queryKey: ["users"] });
-      reset();
+      reset({
+        name: "",
+        email: "",
+        password: "",
+        role: "Cashier",
+        department_id: "",
+        warehouse_id: "",
+        is_active: true,
+      });
       setSelectedId(created.id);
       setFormError(null);
     },
     onError: (err: Error) => setFormError(err.message),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (values: FormValues) =>
+      updateUser(selectedId!, {
+        name: values.name,
+        email: values.email,
+        role: values.role,
+        department_id: values.department_id || null,
+        warehouse_id: values.warehouse_id || null,
+        is_active: values.is_active,
+        ...(values.password ? { password: values.password } : {}),
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      editForm.setValue("password", "");
+      setEditError(null);
+      setSaved(true);
+    },
+    onError: (err: Error) => {
+      setSaved(false);
+      setEditError(err.message);
+    },
   });
 
   const uploadMutation = useMutation({
@@ -76,13 +147,33 @@ export function UsersPage() {
   });
 
   const selected = usersQuery.data?.data.find((u: CatalogUser) => u.id === selectedId) ?? null;
+  const departments = departmentsQuery.data?.data ?? [];
+  const warehouses = warehousesQuery.data?.data ?? [];
+  const warehouseName = (id: string | null) => warehouses.find((warehouse) => warehouse.id === id)?.name ?? "—";
+
+  useEffect(() => {
+    if (!selected) {
+      return;
+    }
+    editForm.reset({
+      name: selected.name,
+      email: selected.email,
+      password: "",
+      role: (selected.roles[0] as FormValues["role"]) ?? "Cashier",
+      department_id: selected.department?.id ?? "",
+      warehouse_id: selected.warehouse_id ?? "",
+      is_active: selected.is_active,
+    });
+    setSaved(false);
+    setEditError(null);
+  }, [selected, editForm]);
 
   return (
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
           <h1 className={styles.title}>Users</h1>
-          <p className={styles.subtitle}>Accounts, roles, and profile images.</p>
+          <p className={styles.subtitle}>Accounts, roles, departments, and warehouse pins.</p>
         </div>
       </header>
 
@@ -101,6 +192,7 @@ export function UsersPage() {
                     <th>Email</th>
                     <th>Roles</th>
                     <th>Department</th>
+                    <th>Warehouse</th>
                     <th>Active</th>
                   </tr>
                 </thead>
@@ -117,6 +209,7 @@ export function UsersPage() {
                       <td className="mono">{catalogUser.email}</td>
                       <td>{catalogUser.roles.join(", ")}</td>
                       <td>{catalogUser.department?.name ?? "—"}</td>
+                      <td>{warehouseName(catalogUser.warehouse_id)}</td>
                       <td>{catalogUser.is_active ? "Yes" : "No"}</td>
                     </tr>
                   ))}
@@ -131,36 +224,24 @@ export function UsersPage() {
               className={styles.form}
               onSubmit={handleSubmit((values) => {
                 setFormError(null);
-                createMutation.mutate(values);
+                createMutation.mutate({
+                  name: values.name,
+                  email: values.email,
+                  password: values.password,
+                  role: values.role,
+                  department_id: values.department_id || null,
+                  warehouse_id: values.warehouse_id || null,
+                  is_active: values.is_active,
+                });
               })}
             >
-              <label className={styles.label}>
-                Name
-                <input className={styles.input} {...register("name")} />
-                {errors.name ? <span className={styles.fieldError}>{errors.name.message}</span> : null}
-              </label>
-              <label className={styles.label}>
-                Email
-                <input className={styles.input} type="email" {...register("email")} />
-                {errors.email ? <span className={styles.fieldError}>{errors.email.message}</span> : null}
-              </label>
-              <label className={styles.label}>
-                Password
-                <input className={styles.input} type="password" {...register("password")} />
-                {errors.password ? (
-                  <span className={styles.fieldError}>{errors.password.message}</span>
-                ) : null}
-              </label>
-              <label className={styles.label}>
-                Role
-                <select className={styles.select} {...register("role")}>
-                  {ROLES.map((role) => (
-                    <option key={role} value={role}>
-                      {role}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <UserFields
+                register={register}
+                errors={errors}
+                departments={departments}
+                warehouses={warehouses}
+                passwordLabel="Password"
+              />
               {formError ? <p className={styles.error}>{formError}</p> : null}
               <button className={styles.button} type="submit" disabled={isSubmitting || createMutation.isPending}>
                 {createMutation.isPending ? "Creating…" : "Create"}
@@ -174,24 +255,31 @@ export function UsersPage() {
           {!selected ? <p className={styles.muted}>Select a user row.</p> : null}
           {selected ? (
             <>
-              <div className={styles.detailGrid}>
-                <div className={styles.detailRow}>
-                  <span className={styles.detailLabel}>Name</span>
-                  <span>{selected.name}</span>
-                </div>
-                <div className={styles.detailRow}>
-                  <span className={styles.detailLabel}>Email</span>
-                  <span className="mono">{selected.email}</span>
-                </div>
-                <div className={styles.detailRow}>
-                  <span className={styles.detailLabel}>Roles</span>
-                  <span>{selected.roles.join(", ")}</span>
-                </div>
-                <div className={styles.detailRow}>
-                  <span className={styles.detailLabel}>Department</span>
-                  <span>{selected.department?.name ?? "—"}</span>
-                </div>
-              </div>
+              <form
+                className={styles.form}
+                onSubmit={editForm.handleSubmit((values) => {
+                  setSaved(false);
+                  setEditError(null);
+                  updateMutation.mutate(values);
+                })}
+              >
+                <UserFields
+                  register={editForm.register}
+                  errors={editForm.formState.errors}
+                  departments={departments}
+                  warehouses={warehouses}
+                  passwordLabel="New password"
+                />
+                {editError ? <p className={styles.error}>{editError}</p> : null}
+                {saved ? <p className={styles.muted}>Saved.</p> : null}
+                <button
+                  className={styles.button}
+                  type="submit"
+                  disabled={editForm.formState.isSubmitting || updateMutation.isPending}
+                >
+                  {updateMutation.isPending ? "Saving…" : "Save"}
+                </button>
+              </form>
 
               <h3 className={styles.panelTitle}>Images</h3>
               {imagesQuery.isLoading ? <p className={styles.muted}>Loading images…</p> : null}
@@ -227,5 +315,75 @@ export function UsersPage() {
         </section>
       </div>
     </div>
+  );
+}
+
+function UserFields({
+  register,
+  errors,
+  departments,
+  warehouses,
+  passwordLabel,
+}: {
+  register: ReturnType<typeof useForm<FormValues>>["register"];
+  errors: ReturnType<typeof useForm<FormValues>>["formState"]["errors"];
+  departments: { id: string; name: string }[];
+  warehouses: { id: string; code: string; name: string }[];
+  passwordLabel: string;
+}) {
+  return (
+    <>
+      <label className={styles.label}>
+        Name
+        <input className={styles.input} {...register("name")} />
+        {errors.name ? <span className={styles.fieldError}>{errors.name.message}</span> : null}
+      </label>
+      <label className={styles.label}>
+        Email
+        <input className={styles.input} type="email" {...register("email")} />
+        {errors.email ? <span className={styles.fieldError}>{errors.email.message}</span> : null}
+      </label>
+      <label className={styles.label}>
+        {passwordLabel}
+        <input className={styles.input} type="password" {...register("password")} />
+        {errors.password ? <span className={styles.fieldError}>{errors.password.message}</span> : null}
+      </label>
+      <label className={styles.label}>
+        Role
+        <select className={styles.select} {...register("role")}>
+          {ROLES.map((role) => (
+            <option key={role} value={role}>
+              {role}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className={styles.label}>
+        Department
+        <select className={styles.select} {...register("department_id")}>
+          <option value="">None</option>
+          {departments.map((department) => (
+            <option key={department.id} value={department.id}>
+              {department.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className={styles.label}>
+        Warehouse pin
+        <select className={styles.select} {...register("warehouse_id")}>
+          <option value="">None</option>
+          {warehouses.map((warehouse) => (
+            <option key={warehouse.id} value={warehouse.id}>
+              {warehouse.code} — {warehouse.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className={styles.check}>
+        <input type="checkbox" {...register("is_active")} />
+        Active
+      </label>
+    </>
   );
 }

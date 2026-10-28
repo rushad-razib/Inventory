@@ -1,15 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
-import { createCategory, listCategories } from "../lib/api";
+import { createCategory, listCategories, updateCategory } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { can } from "../lib/permissions";
 import styles from "./catalog.module.css";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required"),
+  parent_id: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -17,7 +18,10 @@ type FormValues = z.infer<typeof schema>;
 export function CategoriesPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
   const canManage = can(user, "catalog.manage");
 
   const categoriesQuery = useQuery({
@@ -32,23 +36,61 @@ export function CategoriesPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "" },
+    defaultValues: { name: "", parent_id: "" },
+  });
+
+  const editForm = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { name: "", parent_id: "" },
   });
 
   const createMutation = useMutation({
     mutationFn: createCategory,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["categories"] });
-      reset();
+      reset({ name: "", parent_id: "" });
       setFormError(null);
     },
     onError: (err: Error) => setFormError(err.message),
   });
 
+  const updateMutation = useMutation({
+    mutationFn: (values: FormValues) =>
+      updateCategory(selectedId!, {
+        name: values.name,
+        parent_id: values.parent_id || null,
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["categories"] });
+      setEditError(null);
+      setSaved(true);
+    },
+    onError: (err: Error) => {
+      setSaved(false);
+      setEditError(err.message);
+    },
+  });
+
   const onSubmit = handleSubmit((values) => {
     setFormError(null);
-    createMutation.mutate({ name: values.name });
+    createMutation.mutate({ name: values.name, parent_id: values.parent_id || null });
   });
+
+  const categories = categoriesQuery.data?.data ?? [];
+  const selected = categories.find((category) => category.id === selectedId) ?? null;
+  const parentName = (id: string | null) => categories.find((category) => category.id === id)?.name ?? "—";
+
+  useEffect(() => {
+    if (!selected) {
+      return;
+    }
+    editForm.reset({
+      name: selected.name,
+      parent_id: selected.parent_id ?? "",
+    });
+    setSaved(false);
+    setEditError(null);
+  }, [selected, editForm]);
 
   return (
     <div className={styles.page}>
@@ -75,9 +117,15 @@ export function CategoriesPage() {
               </thead>
               <tbody>
                 {categoriesQuery.data.data.map((category) => (
-                  <tr key={category.id}>
+                  <tr
+                    key={category.id}
+                    className={[styles.clickable, selectedId === category.id ? styles.selected : ""]
+                      .filter(Boolean)
+                      .join(" ")}
+                    onClick={() => setSelectedId(category.id)}
+                  >
                     <td>{category.name}</td>
-                    <td className="mono">{category.parent_id ?? "—"}</td>
+                    <td>{parentName(category.parent_id)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -94,11 +142,56 @@ export function CategoriesPage() {
                 <input className={styles.input} {...register("name")} />
                 {errors.name ? <span className={styles.fieldError}>{errors.name.message}</span> : null}
               </label>
+              <label className={styles.label}>
+                Parent
+                <select className={styles.select} {...register("parent_id")}>
+                  <option value="">None</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
               {formError ? <p className={styles.error}>{formError}</p> : null}
               <button className={styles.button} type="submit" disabled={isSubmitting || createMutation.isPending}>
                 {createMutation.isPending ? "Creating…" : "Create"}
               </button>
             </form>
+            {selected ? (
+              <form
+                className={styles.form}
+                onSubmit={editForm.handleSubmit((values) => {
+                  setSaved(false);
+                  setEditError(null);
+                  updateMutation.mutate(values);
+                })}
+              >
+                <h2 className={styles.panelTitle}>Edit category</h2>
+                <label className={styles.label}>
+                  Name
+                  <input className={styles.input} {...editForm.register("name")} />
+                </label>
+                <label className={styles.label}>
+                  Parent
+                  <select className={styles.select} {...editForm.register("parent_id")}>
+                    <option value="">None</option>
+                    {categories
+                      .filter((category) => category.id !== selected.id)
+                      .map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                {editError ? <p className={styles.error}>{editError}</p> : null}
+                {saved ? <p className={styles.muted}>Saved.</p> : null}
+                <button className={styles.button} type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? "Saving…" : "Save"}
+                </button>
+              </form>
+            ) : null}
           </section>
         ) : null}
       </div>

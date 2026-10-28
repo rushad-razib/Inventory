@@ -261,13 +261,32 @@ export async function listProducts(): Promise<{ data: Product[]; meta: Paginated
   };
 }
 
-export async function createProduct(body: {
+export type ProductInput = {
   sku: string;
   name: string;
   barcode?: string | null;
+  description?: string | null;
+  category_id?: string | null;
+  unit_of_measure?: string;
   sell_price: number;
-}): Promise<Product> {
+  reorder_point?: number;
+  reorder_quantity?: number;
+  preferred_supplier_id?: string | null;
+  track_stock?: boolean;
+  is_active?: boolean;
+};
+
+export async function createProduct(body: ProductInput): Promise<Product> {
   const { data, error, response } = await apiClient.POST("/v1/products", { body });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Product;
+}
+
+export async function updateProduct(id: string, body: Partial<ProductInput>): Promise<Product> {
+  const { data, error, response } = await apiClient.PATCH("/v1/products/{product}", {
+    params: { path: { product: id } },
+    body,
+  });
   const payload = assertData(data, error, response.status);
   return payload.data as unknown as Product;
 }
@@ -317,6 +336,18 @@ export async function createCategory(body: { name: string; parent_id?: string | 
   return payload.data as unknown as Category;
 }
 
+export async function updateCategory(
+  id: string,
+  body: { name?: string; parent_id?: string | null },
+): Promise<Category> {
+  const { data, error, response } = await apiClient.PATCH("/v1/categories/{category}", {
+    params: { path: { category: id } },
+    body,
+  });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Category;
+}
+
 export async function listWarehouses(): Promise<{ data: Warehouse[]; meta: PaginatedMeta }> {
   const { data, error, response } = await apiClient.GET("/v1/warehouses");
   const payload = assertData(data, error, response.status);
@@ -326,12 +357,25 @@ export async function listWarehouses(): Promise<{ data: Warehouse[]; meta: Pagin
   };
 }
 
-export async function createWarehouse(body: {
+export type WarehouseInput = {
   code: string;
   name: string;
   address?: string | null;
-}): Promise<Warehouse> {
+  is_default?: boolean;
+  is_active?: boolean;
+};
+
+export async function createWarehouse(body: WarehouseInput): Promise<Warehouse> {
   const { data, error, response } = await apiClient.POST("/v1/warehouses", { body });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Warehouse;
+}
+
+export async function updateWarehouse(id: string, body: Partial<WarehouseInput>): Promise<Warehouse> {
+  const { data, error, response } = await apiClient.PATCH("/v1/warehouses/{warehouse}", {
+    params: { path: { warehouse: id } },
+    body,
+  });
   const payload = assertData(data, error, response.status);
   return payload.data as unknown as Warehouse;
 }
@@ -345,7 +389,7 @@ export async function listSuppliers(): Promise<{ data: Supplier[]; meta: Paginat
   };
 }
 
-export async function createSupplier(body: {
+export type SupplierInput = {
   code: string;
   name: string;
   supply_mode: "outright" | "consignment";
@@ -353,8 +397,23 @@ export async function createSupplier(body: {
   contact?: string | null;
   email?: string | null;
   phone?: string | null;
-}): Promise<Supplier> {
+  address?: string | null;
+  payment_terms_days?: number;
+  lead_time_days?: number;
+  notes?: string | null;
+};
+
+export async function createSupplier(body: SupplierInput): Promise<Supplier> {
   const { data, error, response } = await apiClient.POST("/v1/suppliers", { body });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Supplier;
+}
+
+export async function updateSupplier(id: string, body: Partial<SupplierInput>): Promise<Supplier> {
+  const { data, error, response } = await apiClient.PATCH("/v1/suppliers/{supplier}", {
+    params: { path: { supplier: id } },
+    body,
+  });
   const payload = assertData(data, error, response.status);
   return payload.data as unknown as Supplier;
 }
@@ -419,13 +478,27 @@ export async function listUsers(): Promise<{ data: CatalogUser[]; meta: Paginate
   };
 }
 
-export async function createUser(body: {
+export type UserInput = {
   name: string;
   email: string;
-  password: string;
+  password?: string;
   role: string;
-}): Promise<CatalogUser> {
+  department_id?: string | null;
+  warehouse_id?: string | null;
+  is_active?: boolean;
+};
+
+export async function createUser(body: UserInput & { password: string }): Promise<CatalogUser> {
   const { data, error, response } = await apiClient.POST("/v1/users", { body });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as CatalogUser;
+}
+
+export async function updateUser(id: string, body: Partial<UserInput>): Promise<CatalogUser> {
+  const { data, error, response } = await apiClient.PATCH("/v1/users/{user}", {
+    params: { path: { user: id } },
+    body,
+  });
   const payload = assertData(data, error, response.status);
   return payload.data as unknown as CatalogUser;
 }

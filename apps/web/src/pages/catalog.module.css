@@ -110,6 +110,14 @@
   font-weight: 500;
 }
 
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
 .input,
 .select {
   border: 1px solid var(--color-stone-line);
