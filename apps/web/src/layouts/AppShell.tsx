@@ -33,6 +33,15 @@ export function AppShell() {
       label: "Warehouses",
       visible: can(user, "inventory.view") || can(user, "settings.manage"),
     },
+    { to: "/stock", label: "Stock", visible: can(user, "inventory.view") },
+    { to: "/lots", label: "Lots", visible: can(user, "inventory.view") },
+    { to: "/movements", label: "Movements", visible: can(user, "inventory.view") },
+    { to: "/transfers", label: "Transfers", visible: can(user, "inventory.transfer") },
+    {
+      to: "/adjustments",
+      label: "Adjustments",
+      visible: can(user, "inventory.adjust") || can(user, "purchasing.approve"),
+    },
     {
       to: "/suppliers",
       label: "Suppliers",

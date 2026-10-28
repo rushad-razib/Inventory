@@ -557,3 +557,231 @@ export async function updateSettings(body: {
   const payload = assertData(data, error, response.status);
   return payload.data as unknown as CompanySettings;
 }
+
+type NamedRef = {
+  id: string;
+  code: string;
+  name: string;
+};
+
+export type StockBalance = {
+  id: string;
+  warehouse_id: string;
+  product_id: string;
+  on_hand: number;
+  damaged: number;
+  in_transit: number;
+  warehouse: NamedRef;
+  product: { id: string; sku: string; name: string };
+};
+
+export type StockLot = {
+  id: string;
+  goods_receipt_id: string | null;
+  supplier_id: string | null;
+  product_id: string;
+  warehouse_id: string;
+  unit_cost: number;
+  ownership: string;
+  qty_received: number;
+  qty_on_hand: number;
+  qty_damaged: number;
+  received_at: string | null;
+  warehouse: NamedRef;
+  product: { id: string; sku: string; name: string };
+  supplier: NamedRef | null;
+};
+
+export type StockMovement = {
+  id: string;
+  product_id: string;
+  warehouse_id: string;
+  stock_lot_id: string;
+  type: string;
+  quantity: number;
+  unit_cost: number;
+  notes: string | null;
+  occurred_at: string | null;
+  warehouse: NamedRef;
+  product: { id: string; sku: string; name: string };
+};
+
+export type TransferLine = {
+  id: string;
+  product_id: string;
+  quantity: number;
+  product: { id: string; sku: string; name: string };
+  lots: {
+    id: string;
+    source_lot_id: string;
+    destination_lot_id: string | null;
+    supplier_id: string | null;
+    ownership: string;
+    unit_cost: number;
+    quantity: number;
+  }[];
+};
+
+export type Transfer = {
+  id: string;
+  source_warehouse_id: string;
+  destination_warehouse_id: string;
+  status: string;
+  created_by: string;
+  created_at: string | null;
+  updated_at: string | null;
+  source_warehouse: NamedRef;
+  destination_warehouse: NamedRef;
+  lines: TransferLine[];
+};
+
+export type Adjustment = {
+  id: string;
+  warehouse_id: string;
+  product_id: string;
+  quantity: number;
+  reason: string;
+  status: string;
+  requester_id: string;
+  approver_id: string | null;
+  posted_at: string | null;
+  created_at: string | null;
+  warehouse: NamedRef;
+  product: { id: string; sku: string; name: string };
+  requester: { id: string; name: string };
+};
+
+function idempotencyHeaders(): { "Idempotency-Key": string } {
+  return { "Idempotency-Key": crypto.randomUUID() };
+}
+
+export async function listStockBalances(
+  warehouseId: string,
+): Promise<{ data: StockBalance[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/stock-balances", {
+    params: { query: { "filter[warehouse_id]": warehouseId } },
+  });
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as StockBalance[],
+    meta: payload.meta,
+  };
+}
+
+export async function listStockLots(
+  warehouseId?: string,
+): Promise<{ data: StockLot[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/stock-lots", {
+    params: {
+      query: warehouseId ? { "filter[warehouse_id]": warehouseId } : {},
+    },
+  });
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as StockLot[],
+    meta: payload.meta,
+  };
+}
+
+export async function listStockMovements(
+  warehouseId?: string,
+): Promise<{ data: StockMovement[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/stock-movements", {
+    params: {
+      query: warehouseId ? { "filter[warehouse_id]": warehouseId } : {},
+    },
+  });
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as StockMovement[],
+    meta: payload.meta,
+  };
+}
+
+export async function listTransfers(): Promise<{ data: Transfer[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/transfers");
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as Transfer[],
+    meta: payload.meta,
+  };
+}
+
+export async function createTransfer(body: {
+  source_warehouse_id: string;
+  destination_warehouse_id: string;
+  lines: { product_id: string; quantity: number }[];
+}): Promise<Transfer> {
+  const { data, error, response } = await apiClient.POST("/v1/transfers", { body });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Transfer;
+}
+
+async function postTransferAction(
+  path: "/v1/transfers/{transfer}/ship" | "/v1/transfers/{transfer}/receive" | "/v1/transfers/{transfer}/cancel",
+  id: string,
+): Promise<Transfer> {
+  const { data, error, response } = await apiClient.POST(path, {
+    params: { path: { transfer: id } },
+    headers: idempotencyHeaders(),
+  });
+  const payload = assertData(data, error, response.status);
+  return (payload as unknown as { data: Transfer }).data;
+}
+
+export function shipTransfer(id: string): Promise<Transfer> {
+  return postTransferAction("/v1/transfers/{transfer}/ship", id);
+}
+
+export function receiveTransfer(id: string): Promise<Transfer> {
+  return postTransferAction("/v1/transfers/{transfer}/receive", id);
+}
+
+export function cancelTransfer(id: string): Promise<Transfer> {
+  return postTransferAction("/v1/transfers/{transfer}/cancel", id);
+}
+
+export async function listAdjustments(
+  warehouseId?: string,
+): Promise<{ data: Adjustment[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/adjustments", {
+    params: {
+      query: warehouseId ? { "filter[warehouse_id]": warehouseId } : {},
+    },
+  });
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as Adjustment[],
+    meta: payload.meta,
+  };
+}
+
+export async function createAdjustment(body: {
+  warehouse_id: string;
+  product_id: string;
+  quantity: number;
+  reason: "damage" | "count" | "correction";
+}): Promise<Adjustment> {
+  const { data, error, response } = await apiClient.POST("/v1/adjustments", {
+    body,
+    headers: idempotencyHeaders(),
+  });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Adjustment;
+}
+
+export async function approveAdjustment(id: string): Promise<Adjustment> {
+  const { data, error, response } = await apiClient.POST("/v1/adjustments/{adjustment}/approve", {
+    params: { path: { adjustment: id } },
+  });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Adjustment;
+}
+
+export async function rejectAdjustment(id: string): Promise<Adjustment> {
+  const { data, error, response } = await apiClient.POST("/v1/adjustments/{adjustment}/reject", {
+    params: { path: { adjustment: id } },
+  });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Adjustment;
+}

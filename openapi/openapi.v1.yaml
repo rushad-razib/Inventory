@@ -6,6 +6,176 @@ servers:
   -
     url: 'http://localhost:8000/api'
 paths:
+  /v1/adjustments:
+    get:
+      operationId: adjustment.index
+      tags:
+        - Adjustment
+      parameters:
+        -
+          name: 'filter[warehouse_id]'
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        422:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/validation-failed
+                  title:
+                    type: string
+                    const: 'Validation Failed'
+                  status:
+                    type: integer
+                    const: 422
+                  detail:
+                    type: string
+                    const: 'One or more fields failed validation.'
+                  errors:
+                    type: object
+                    properties:
+                      status: { type: array, prefixItems: [{ type: string, const: 'Unknown status.' }], minItems: 1, maxItems: 1 }
+                    required:
+                      - status
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: adjustment.store
+      tags:
+        - Adjustment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreAdjustmentRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: []
+                required:
+                  - data
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/adjustments/{adjustment}/approve':
+    post:
+      operationId: adjustment.approve
+      tags:
+        - Adjustment
+      parameters:
+        -
+          name: adjustment
+          in: path
+          required: true
+          description: 'The adjustment ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/adjustments/{adjustment}/reject':
+    post:
+      operationId: adjustment.reject
+      tags:
+        - Adjustment
+      parameters:
+        -
+          name: adjustment
+          in: path
+          required: true
+          description: 'The adjustment ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
   /v1/auth/login:
     post:
       operationId: auth.login
@@ -1450,6 +1620,283 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         422:
           $ref: '#/components/responses/ValidationException'
+  /v1/stock-balances:
+    get:
+      operationId: stock.balances
+      tags:
+        - Stock
+      parameters:
+        -
+          name: 'filter[warehouse_id]'
+          in: query
+          schema:
+            type: string
+        -
+          name: 'filter[product_id]'
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to view stock.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/stock-lots:
+    get:
+      operationId: stock.lots
+      tags:
+        - Stock
+      parameters:
+        -
+          name: 'filter[warehouse_id]'
+          in: query
+          schema:
+            type: string
+        -
+          name: 'filter[product_id]'
+          in: query
+          schema:
+            type: string
+        -
+          name: 'filter[supplier_id]'
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        422:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/validation-failed
+                  title:
+                    type: string
+                    const: 'Validation Failed'
+                  status:
+                    type: integer
+                    const: 422
+                  detail:
+                    type: string
+                    const: 'One or more fields failed validation.'
+                  errors:
+                    type: array
+                    prefixItems:
+                      - { type: array, prefixItems: [{ type: string }], minItems: 1, maxItems: 1 }
+                    minItems: 1
+                    maxItems: 1
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to view stock.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/stock-movements:
+    get:
+      operationId: stock.movements
+      tags:
+        - Stock
+      parameters:
+        -
+          name: 'filter[warehouse_id]'
+          in: query
+          schema:
+            type: string
+        -
+          name: 'filter[product_id]'
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        422:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/validation-failed
+                  title:
+                    type: string
+                    const: 'Validation Failed'
+                  status:
+                    type: integer
+                    const: 422
+                  detail:
+                    type: string
+                    const: 'One or more fields failed validation.'
+                  errors:
+                    type: array
+                    prefixItems:
+                      - { type: array, prefixItems: [{ type: string }], minItems: 1, maxItems: 1 }
+                    minItems: 1
+                    maxItems: 1
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to view stock.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
   /v1/suppliers:
     get:
       operationId: supplier.index
@@ -1889,6 +2336,158 @@ paths:
                   - status
                   - detail
                   - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  /v1/transfers:
+    get:
+      operationId: transfer.index
+      tags:
+        - Transfer
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: transfer.store
+      tags:
+        - Transfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreTransferRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/transfers/{transfer}/ship':
+    post:
+      operationId: transfer.ship
+      tags:
+        - Transfer
+      parameters:
+        -
+          name: transfer
+          in: path
+          required: true
+          description: 'The transfer ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: string
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/transfers/{transfer}/receive':
+    post:
+      operationId: transfer.receive
+      tags:
+        - Transfer
+      parameters:
+        -
+          name: transfer
+          in: path
+          required: true
+          description: 'The transfer ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: string
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/transfers/{transfer}/cancel':
+    post:
+      operationId: transfer.cancel
+      tags:
+        - Transfer
+      parameters:
+        -
+          name: transfer
+          in: path
+          required: true
+          description: 'The transfer ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: string
+        403:
+          $ref: '#/components/responses/AuthorizationException'
         404:
           $ref: '#/components/responses/ModelNotFoundException'
         401:
@@ -2474,6 +3073,29 @@ components:
         - email
         - password
       title: LoginRequest
+    StoreAdjustmentRequest:
+      type: object
+      properties:
+        warehouse_id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+        reason:
+          type: string
+          enum:
+            - damage
+            - count
+            - correction
+      required:
+        - warehouse_id
+        - product_id
+        - quantity
+        - reason
+      title: StoreAdjustmentRequest
     StoreCategoryRequest:
       type: object
       properties:
@@ -2648,6 +3270,36 @@ components:
         - supply_mode
         - status
       title: StoreSupplierRequest
+    StoreTransferRequest:
+      type: object
+      properties:
+        source_warehouse_id:
+          type: string
+          format: uuid
+        destination_warehouse_id:
+          type: string
+          format: uuid
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id:
+                type: string
+                format: uuid
+              quantity:
+                type: integer
+                minimum: 1
+            required:
+              - product_id
+              - quantity
+          minItems: 1
+          uniqueItems: true
+      required:
+        - source_warehouse_id
+        - destination_warehouse_id
+        - lines
+      title: StoreTransferRequest
     StoreUserRequest:
       type: object
       properties:
@@ -2954,6 +3606,18 @@ components:
               - message
     ModelNotFoundException:
       description: 'Not found'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: 'Error overview.'
+            required:
+              - message
+    AuthorizationException:
+      description: 'Authorization error'
       content:
         application/json:
           schema:

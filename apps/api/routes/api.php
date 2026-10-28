@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AdjustmentController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\CustomerController;
@@ -8,8 +9,10 @@ use App\Http\Controllers\Api\V1\ImageController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProductImageController;
 use App\Http\Controllers\Api\V1\SettingsController;
+use App\Http\Controllers\Api\V1\StockController;
 use App\Http\Controllers\Api\V1\SupplierController;
 use App\Http\Controllers\Api\V1\SupplierProductController;
+use App\Http\Controllers\Api\V1\TransferController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\UserImageController;
 use App\Http\Controllers\Api\V1\WarehouseController;
@@ -69,6 +72,21 @@ Route::prefix('v1')->group(function () {
         Route::get('/customers/{customer}', [CustomerController::class, 'show']);
         Route::patch('/customers/{customer}', [CustomerController::class, 'update']);
         Route::get('/customers/{customer}/point-entries', [CustomerController::class, 'pointEntries']);
+
+        Route::get('/stock-balances', [StockController::class, 'balances']);
+        Route::get('/stock-lots', [StockController::class, 'lots']);
+        Route::get('/stock-movements', [StockController::class, 'movements']);
+
+        Route::get('/transfers', [TransferController::class, 'index']);
+        Route::post('/transfers', [TransferController::class, 'store']);
+        Route::post('/transfers/{transfer}/ship', [TransferController::class, 'ship']);
+        Route::post('/transfers/{transfer}/receive', [TransferController::class, 'receive']);
+        Route::post('/transfers/{transfer}/cancel', [TransferController::class, 'cancel']);
+
+        Route::get('/adjustments', [AdjustmentController::class, 'index']);
+        Route::post('/adjustments', [AdjustmentController::class, 'store']);
+        Route::post('/adjustments/{adjustment}/approve', [AdjustmentController::class, 'approve']);
+        Route::post('/adjustments/{adjustment}/reject', [AdjustmentController::class, 'reject']);
 
         Route::patch('/images/{image}', [ImageController::class, 'update']);
         Route::delete('/images/{image}', [ImageController::class, 'destroy']);

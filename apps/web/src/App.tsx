@@ -12,6 +12,11 @@ import { CustomersPage } from "./pages/CustomersPage";
 import { UsersPage } from "./pages/UsersPage";
 import { DepartmentsPage } from "./pages/DepartmentsPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { StockPage } from "./pages/StockPage";
+import { LotsPage } from "./pages/LotsPage";
+import { MovementsPage } from "./pages/MovementsPage";
+import { TransfersPage } from "./pages/TransfersPage";
+import { AdjustmentsPage } from "./pages/AdjustmentsPage";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +74,11 @@ export default function App() {
               <Route path="products" element={<ProductsPage />} />
               <Route path="categories" element={<CategoriesPage />} />
               <Route path="warehouses" element={<WarehousesPage />} />
+              <Route path="stock" element={<StockPage />} />
+              <Route path="lots" element={<LotsPage />} />
+              <Route path="movements" element={<MovementsPage />} />
+              <Route path="transfers" element={<TransfersPage />} />
+              <Route path="adjustments" element={<AdjustmentsPage />} />
               <Route path="suppliers" element={<SuppliersPage />} />
               <Route path="customers" element={<CustomersPage />} />
               <Route path="users" element={<UsersPage />} />

@@ -1,6 +1,8 @@
 <?php
 
+use App\Exceptions\LedgerException;
 use App\Http\Responses\ProblemResponse;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -26,6 +28,32 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(function (Request $request, Throwable $e) {
             return $request->is('api/*') || $request->expectsJson();
+        });
+
+        $exceptions->render(function (LedgerException $e, Request $request) {
+            if (! $request->is('api/*') && ! $request->expectsJson()) {
+                return null;
+            }
+
+            return ProblemResponse::make(
+                $e->type,
+                $e->title(),
+                $e->status,
+                $e->getMessage(),
+            );
+        });
+
+        $exceptions->render(function (AuthorizationException $e, Request $request) {
+            if (! $request->is('api/*') && ! $request->expectsJson()) {
+                return null;
+            }
+
+            return ProblemResponse::make(
+                'forbidden',
+                'Forbidden',
+                403,
+                $e->getMessage() !== '' ? $e->getMessage() : 'You do not have permission to perform this action.',
+            );
         });
 
         $exceptions->render(function (ValidationException $e, Request $request) {

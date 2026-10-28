@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Responses\ProblemResponse;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 abstract class Controller
 {
+    use AuthorizesRequests;
+
     protected function forbidden(string $detail = 'You do not have permission to perform this action.'): JsonResponse
     {
         return ProblemResponse::make(

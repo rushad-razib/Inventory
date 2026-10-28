@@ -4,6 +4,54 @@
  */
 
 export interface paths {
+    "/v1/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adjustment.index"];
+        put?: never;
+        post: operations["adjustment.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/adjustments/{adjustment}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adjustment.approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/adjustments/{adjustment}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adjustment.reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/login": {
         parameters: {
             query?: never;
@@ -324,6 +372,54 @@ export interface paths {
         patch: operations["settings.update"];
         trace?: never;
     };
+    "/v1/stock-balances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["stock.balances"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/stock-lots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["stock.lots"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/stock-movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["stock.movements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/suppliers": {
         parameters: {
             query?: never;
@@ -386,6 +482,70 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["supplierProduct.update"];
+        trace?: never;
+    };
+    "/v1/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["transfer.index"];
+        put?: never;
+        post: operations["transfer.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/transfers/{transfer}/ship": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["transfer.ship"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/transfers/{transfer}/receive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["transfer.receive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/transfers/{transfer}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["transfer.cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/users": {
@@ -483,6 +643,16 @@ export interface components {
             email: string;
             password: string;
         };
+        /** StoreAdjustmentRequest */
+        StoreAdjustmentRequest: {
+            /** Format: uuid */
+            warehouse_id: string;
+            /** Format: uuid */
+            product_id: string;
+            quantity: number;
+            /** @enum {string} */
+            reason: "damage" | "count" | "correction";
+        };
         /** StoreCategoryRequest */
         StoreCategoryRequest: {
             name: string;
@@ -547,6 +717,18 @@ export interface components {
             /** @enum {string} */
             status: "active" | "inactive";
             notes?: string | null;
+        };
+        /** StoreTransferRequest */
+        StoreTransferRequest: {
+            /** Format: uuid */
+            source_warehouse_id: string;
+            /** Format: uuid */
+            destination_warehouse_id: string;
+            lines: {
+                /** Format: uuid */
+                product_id: string;
+                quantity: number;
+            }[];
         };
         /** StoreUserRequest */
         StoreUserRequest: {
@@ -698,6 +880,18 @@ export interface components {
                 };
             };
         };
+        /** @description Authorization error */
+        AuthorizationException: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    /** @description Error overview. */
+                    message: string;
+                };
+            };
+        };
     };
     parameters: never;
     requestBodies: never;
@@ -706,6 +900,145 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    "adjustment.index": {
+        parameters: {
+            query?: {
+                "filter[warehouse_id]"?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: {
+                            page: number;
+                            per_page: number;
+                            total: number;
+                            last_page: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/validation-failed";
+                        /** @constant */
+                        title: "Validation Failed";
+                        /** @constant */
+                        status: 422;
+                        /** @constant */
+                        detail: "One or more fields failed validation.";
+                        errors: {
+                            status: [
+                                "Unknown status."
+                            ];
+                        };
+                    };
+                };
+            };
+        };
+    };
+    "adjustment.store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoreAdjustmentRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "adjustment.approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The adjustment ID */
+                adjustment: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "adjustment.reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The adjustment ID */
+                adjustment: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
     "auth.login": {
         parameters: {
             query?: never;
@@ -1867,6 +2200,198 @@ export interface operations {
             422: components["responses"]["ValidationException"];
         };
     };
+    "stock.balances": {
+        parameters: {
+            query?: {
+                "filter[warehouse_id]"?: string;
+                "filter[product_id]"?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: {
+                            page: number;
+                            per_page: number;
+                            total: number;
+                            last_page: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/forbidden";
+                        /** @constant */
+                        title: "Forbidden";
+                        /** @constant */
+                        status: 403;
+                        /** @constant */
+                        detail: "You do not have permission to view stock.";
+                        errors: string;
+                    };
+                };
+            };
+        };
+    };
+    "stock.lots": {
+        parameters: {
+            query?: {
+                "filter[warehouse_id]"?: string;
+                "filter[product_id]"?: string;
+                "filter[supplier_id]"?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: {
+                            page: number;
+                            per_page: number;
+                            total: number;
+                            last_page: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/forbidden";
+                        /** @constant */
+                        title: "Forbidden";
+                        /** @constant */
+                        status: 403;
+                        /** @constant */
+                        detail: "You do not have permission to view stock.";
+                        errors: string;
+                    };
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/validation-failed";
+                        /** @constant */
+                        title: "Validation Failed";
+                        /** @constant */
+                        status: 422;
+                        /** @constant */
+                        detail: "One or more fields failed validation.";
+                        errors: [
+                            [
+                                string
+                            ]
+                        ];
+                    };
+                };
+            };
+        };
+    };
+    "stock.movements": {
+        parameters: {
+            query?: {
+                "filter[warehouse_id]"?: string;
+                "filter[product_id]"?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: {
+                            page: number;
+                            per_page: number;
+                            total: number;
+                            last_page: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/forbidden";
+                        /** @constant */
+                        title: "Forbidden";
+                        /** @constant */
+                        status: 403;
+                        /** @constant */
+                        detail: "You do not have permission to view stock.";
+                        errors: string;
+                    };
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/validation-failed";
+                        /** @constant */
+                        title: "Validation Failed";
+                        /** @constant */
+                        status: 422;
+                        /** @constant */
+                        detail: "One or more fields failed validation.";
+                        errors: [
+                            [
+                                string
+                            ]
+                        ];
+                    };
+                };
+            };
+        };
+    };
     "supplier.index": {
         parameters: {
             query?: never;
@@ -2200,6 +2725,142 @@ export interface operations {
                     };
                 };
             };
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "transfer.index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: {
+                            page: number;
+                            per_page: number;
+                            total: number;
+                            last_page: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+        };
+    };
+    "transfer.store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoreTransferRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "transfer.ship": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The transfer ID */
+                transfer: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "transfer.receive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The transfer ID */
+                transfer: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "transfer.cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The transfer ID */
+                transfer: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
             404: components["responses"]["ModelNotFoundException"];
             422: components["responses"]["ValidationException"];
         };
