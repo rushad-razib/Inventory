@@ -8,6 +8,7 @@ use App\Http\Resources\SupplierBillResource;
 use App\Http\Responses\ApiResponse;
 use App\Http\Responses\ProblemResponse;
 use App\Models\GoodsReceipt;
+use App\Models\SaleLineAllocation;
 use App\Models\SupplierBill;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -43,11 +44,17 @@ class SupplierBillController extends Controller
         if ($request->filled('filter.source')) {
             $source = (string) $request->input('filter.source');
 
-            if ($source !== 'goods_receipt') {
+            $sourceType = match ($source) {
+                'goods_receipt' => GoodsReceipt::class,
+                'sale_allocation' => SaleLineAllocation::class,
+                default => null,
+            };
+
+            if ($sourceType === null) {
                 return $this->badFilter('source');
             }
 
-            $query->where('source_type', GoodsReceipt::class);
+            $query->where('source_type', $sourceType);
         }
 
         return ApiResponse::paginated(

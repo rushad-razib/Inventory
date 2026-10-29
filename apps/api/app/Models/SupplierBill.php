@@ -19,6 +19,7 @@ class SupplierBill extends Model
         'status',
         'amount',
         'amount_paid',
+        'credited_amount',
         'due_on',
     ];
 
@@ -31,6 +32,7 @@ class SupplierBill extends Model
             'status' => SupplierBillStatus::class,
             'amount' => 'integer',
             'amount_paid' => 'integer',
+            'credited_amount' => 'integer',
             'due_on' => 'date',
         ];
     }

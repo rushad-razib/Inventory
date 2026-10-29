@@ -21,6 +21,9 @@ import { PurchaseOrdersPage } from "./pages/PurchaseOrdersPage";
 import { GoodsReceiptsPage } from "./pages/GoodsReceiptsPage";
 import { ReorderAlertsPage } from "./pages/ReorderAlertsPage";
 import { ApprovalsPage } from "./pages/ApprovalsPage";
+import { SalesPage } from "./pages/SalesPage";
+import { PosPage } from "./pages/PosPage";
+import { CustomerReturnsPage } from "./pages/CustomerReturnsPage";
 import { SupplierBillsPage } from "./pages/SupplierBillsPage";
 
 const queryClient = new QueryClient();
@@ -89,6 +92,9 @@ export default function App() {
               <Route path="reorder-alerts" element={<ReorderAlertsPage />} />
               <Route path="approvals" element={<ApprovalsPage />} />
               <Route path="supplier-bills" element={<SupplierBillsPage />} />
+              <Route path="pos" element={<PosPage />} />
+              <Route path="sales" element={<SalesPage />} />
+              <Route path="customer-returns" element={<CustomerReturnsPage />} />
               <Route path="suppliers" element={<SuppliersPage />} />
               <Route path="customers" element={<CustomersPage />} />
               <Route path="users" element={<UsersPage />} />

@@ -28,6 +28,7 @@ export function SupplierBillsPage() {
                 <th>Status</th>
                 <th className={styles.money}>Amount</th>
                 <th className={styles.money}>Paid</th>
+                <th className={styles.money}>Credited</th>
                 <th>Due</th>
                 <th>Source</th>
               </tr>
@@ -39,6 +40,7 @@ export function SupplierBillsPage() {
                   <td>{prettyLabel(bill.status)}</td>
                   <td className={`mono ${styles.money}`}>{formatTaka(bill.amount)}</td>
                   <td className={`mono ${styles.money}`}>{formatTaka(bill.amount_paid)}</td>
+                  <td className={`mono ${styles.money}`}>{formatTaka(bill.credited_amount)}</td>
                   <td className="mono">{bill.due_on ?? "—"}</td>
                   <td>{prettyLabel(bill.source_type)}</td>
                 </tr>

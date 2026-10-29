@@ -910,13 +910,19 @@ paths:
                 type: object
                 properties:
                   data:
-                    type: array
-                    items:
-                      type: string
-                    minItems: 0
-                    maxItems: 0
-                  meta:
                     type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
                 required:
                   - data
                   - meta
@@ -951,6 +957,242 @@ paths:
           $ref: '#/components/responses/ModelNotFoundException'
         401:
           $ref: '#/components/responses/AuthenticationException'
+  /v1/customer-returns:
+    get:
+      operationId: customerReturn.index
+      tags:
+        - CustomerReturn
+      parameters:
+        -
+          name: 'filter[sale_id]'
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        422:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/validation-failed
+                  title:
+                    type: string
+                    const: 'Validation Failed'
+                  status:
+                    type: integer
+                    const: 422
+                  detail:
+                    type: string
+                    const: 'One or more fields failed validation.'
+                  errors:
+                    type: object
+                    properties:
+                      status: { type: array, prefixItems: [{ type: string, const: 'Unknown status.' }], minItems: 1, maxItems: 1 }
+                    required:
+                      - status
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: customerReturn.store
+      tags:
+        - CustomerReturn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreCustomerReturnRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/customer-returns/{customerReturn}':
+    get:
+      operationId: customerReturn.show
+      tags:
+        - CustomerReturn
+      parameters:
+        -
+          name: customerReturn
+          in: path
+          required: true
+          description: 'The customer return ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/customer-returns/{customerReturn}/approve':
+    post:
+      operationId: customerReturn.approve
+      tags:
+        - CustomerReturn
+      parameters:
+        -
+          name: customerReturn
+          in: path
+          required: true
+          description: 'The customer return ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/customer-returns/{customerReturn}/reject':
+    post:
+      operationId: customerReturn.reject
+      tags:
+        - CustomerReturn
+      parameters:
+        -
+          name: customerReturn
+          in: path
+          required: true
+          description: 'The customer return ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/customer-returns/{customerReturn}/refund':
+    post:
+      operationId: customerReturn.refund
+      tags:
+        - CustomerReturn
+      parameters:
+        -
+          name: customerReturn
+          in: path
+          required: true
+          description: 'The customer return ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: string
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
   /v1/departments:
     get:
       operationId: department.index
@@ -2103,6 +2345,170 @@ paths:
                   - status
                   - detail
                   - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/sales:
+    get:
+      operationId: sale.index
+      tags:
+        - Sale
+      parameters:
+        -
+          name: 'filter[warehouse_id]'
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        422:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/validation-failed
+                  title:
+                    type: string
+                    const: 'Validation Failed'
+                  status:
+                    type: integer
+                    const: 422
+                  detail:
+                    type: string
+                    const: 'One or more fields failed validation.'
+                  errors:
+                    type: object
+                    properties:
+                      status: { type: array, prefixItems: [{ type: string, const: 'Unknown status.' }], minItems: 1, maxItems: 1 }
+                    required:
+                      - status
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: sale.store
+      tags:
+        - Sale
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreSaleRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: string
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/sales/{sale}':
+    get:
+      operationId: sale.show
+      tags:
+        - Sale
+      parameters:
+        -
+          name: sale
+          in: path
+          required: true
+          description: 'The sale ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/sales/{sale}/void':
+    post:
+      operationId: sale.void
+      tags:
+        - Sale
+      parameters:
+        -
+          name: sale
+          in: path
+          required: true
+          description: 'The sale ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
         401:
           $ref: '#/components/responses/AuthenticationException'
   /v1/settings:
@@ -3818,6 +4224,38 @@ components:
       required:
         - mobile
       title: StoreCustomerRequest
+    StoreCustomerReturnRequest:
+      type: object
+      properties:
+        sale_id:
+          type: string
+          format: uuid
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              sale_line_id:
+                type: string
+                format: uuid
+              quantity:
+                type: integer
+                minimum: 1
+              reason:
+                type: string
+                enum:
+                  - resaleable
+                  - damaged
+            required:
+              - sale_line_id
+              - quantity
+              - reason
+          minItems: 1
+          uniqueItems: true
+      required:
+        - sale_id
+        - lines
+      title: StoreCustomerReturnRequest
     StoreDepartmentRequest:
       type: object
       properties:
@@ -3961,6 +4399,55 @@ components:
         - destination_warehouse_id
         - lines
       title: StorePurchaseOrderRequest
+    StoreSaleRequest:
+      type: object
+      properties:
+        warehouse_id:
+          type: string
+          format: uuid
+        customer_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id:
+                type: string
+                format: uuid
+              quantity:
+                type: integer
+                minimum: 1
+            required:
+              - product_id
+              - quantity
+          minItems: 1
+          uniqueItems: true
+        tenders:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum:
+                  - cash
+                  - card
+                  - points
+              amount:
+                type: integer
+                minimum: 1
+            required:
+              - type
+              - amount
+      required:
+        - warehouse_id
+        - lines
+        - tenders
+      title: StoreSaleRequest
     StoreSupplierProductRequest:
       type: object
       properties:

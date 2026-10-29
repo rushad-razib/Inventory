@@ -7,10 +7,10 @@ use App\Models\Product;
 use App\Models\StockBalance;
 use App\Models\StockLot;
 use App\Models\StockMovement;
+use App\Models\SupplierReturn;
 use App\Models\User;
 use App\Models\Warehouse;
 use Database\Seeders\RolePermissionSeeder;
-use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
@@ -148,7 +148,7 @@ it('moves damaged units off the shelf without a supplier return', function () {
         ->and($balance->damaged)->toBe(3)
         ->and($lot->qty_on_hand)->toBe(7)
         ->and($lot->qty_damaged)->toBe(3)
-        ->and(Schema::hasTable('supplier_returns'))->toBeFalse();
+        ->and(SupplierReturn::query()->count())->toBe(0);
 });
 
 it('does not double a lot when a transfer receive is replayed', function () {

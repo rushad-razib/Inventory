@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\ApprovalController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\CustomerReturnController;
 use App\Http\Controllers\Api\V1\DepartmentController;
 use App\Http\Controllers\Api\V1\GoodsReceiptController;
 use App\Http\Controllers\Api\V1\ImageController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProductImageController;
 use App\Http\Controllers\Api\V1\PurchaseOrderController;
 use App\Http\Controllers\Api\V1\ReorderAlertController;
+use App\Http\Controllers\Api\V1\SaleController;
 use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\StockController;
 use App\Http\Controllers\Api\V1\SupplierBillController;
@@ -108,6 +110,18 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/supplier-bills', [SupplierBillController::class, 'index']);
         Route::get('/supplier-bills/{supplier_bill}', [SupplierBillController::class, 'show']);
+
+        Route::get('/sales', [SaleController::class, 'index']);
+        Route::post('/sales', [SaleController::class, 'store']);
+        Route::get('/sales/{sale}', [SaleController::class, 'show']);
+        Route::post('/sales/{sale}/void', [SaleController::class, 'void']);
+
+        Route::get('/customer-returns', [CustomerReturnController::class, 'index']);
+        Route::post('/customer-returns', [CustomerReturnController::class, 'store']);
+        Route::get('/customer-returns/{customer_return}', [CustomerReturnController::class, 'show']);
+        Route::post('/customer-returns/{customer_return}/approve', [CustomerReturnController::class, 'approve']);
+        Route::post('/customer-returns/{customer_return}/reject', [CustomerReturnController::class, 'reject']);
+        Route::post('/customer-returns/{customer_return}/refund', [CustomerReturnController::class, 'refund']);
 
         Route::get('/adjustments', [AdjustmentController::class, 'index']);
         Route::post('/adjustments', [AdjustmentController::class, 'store']);

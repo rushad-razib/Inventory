@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\GoodsReceipt;
+use App\Models\SaleLineAllocation;
 use App\Models\SupplierBill;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -18,11 +19,16 @@ class SupplierBillResource extends JsonResource
         return [
             'id' => $this->id,
             'supplier_id' => $this->supplier_id,
-            'source_type' => $this->source_type === GoodsReceipt::class ? 'goods_receipt' : $this->source_type,
+            'source_type' => match ($this->source_type) {
+                GoodsReceipt::class => 'goods_receipt',
+                SaleLineAllocation::class => 'sale_allocation',
+                default => $this->source_type,
+            },
             'source_id' => $this->source_id,
             'status' => $this->status->label(),
             'amount' => $this->amount,
             'amount_paid' => $this->amount_paid,
+            'credited_amount' => $this->credited_amount,
             'due_on' => $this->due_on?->toDateString(),
             'created_at' => $this->created_at?->toIso8601String(),
             'supplier' => [

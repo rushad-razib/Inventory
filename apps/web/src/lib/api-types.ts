@@ -260,6 +260,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/customer-returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["customerReturn.index"];
+        put?: never;
+        post: operations["customerReturn.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/customer-returns/{customerReturn}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["customerReturn.show"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/customer-returns/{customerReturn}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["customerReturn.approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/customer-returns/{customerReturn}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["customerReturn.reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/customer-returns/{customerReturn}/refund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["customerReturn.refund"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/departments": {
         parameters: {
             query?: never;
@@ -526,6 +606,54 @@ export interface paths {
         get: operations["reorderAlert.index"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["sale.index"];
+        put?: never;
+        post: operations["sale.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sales/{sale}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["sale.show"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sales/{sale}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["sale.void"];
         delete?: never;
         options?: never;
         head?: never;
@@ -881,6 +1009,18 @@ export interface components {
             mobile: string;
             name?: string | null;
         };
+        /** StoreCustomerReturnRequest */
+        StoreCustomerReturnRequest: {
+            /** Format: uuid */
+            sale_id: string;
+            lines: {
+                /** Format: uuid */
+                sale_line_id: string;
+                quantity: number;
+                /** @enum {string} */
+                reason: "resaleable" | "damaged";
+            }[];
+        };
         /** StoreDepartmentRequest */
         StoreDepartmentRequest: {
             name: string;
@@ -938,6 +1078,23 @@ export interface components {
                 /** Format: uuid */
                 product_id: string;
                 quantity: number;
+            }[];
+        };
+        /** StoreSaleRequest */
+        StoreSaleRequest: {
+            /** Format: uuid */
+            warehouse_id: string;
+            /** Format: uuid */
+            customer_id?: string | null;
+            lines: {
+                /** Format: uuid */
+                product_id: string;
+                quantity: number;
+            }[];
+            tenders: {
+                /** @enum {string} */
+                type: "cash" | "card" | "points";
+                amount: number;
             }[];
         };
         /** StoreSupplierProductRequest */
@@ -1902,8 +2059,13 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        data: string[];
-                        meta: string;
+                        data: string;
+                        meta: {
+                            page: number;
+                            per_page: number;
+                            total: number;
+                            last_page: number;
+                        };
                     };
                 };
             };
@@ -1927,6 +2089,198 @@ export interface operations {
                 };
             };
             404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "customerReturn.index": {
+        parameters: {
+            query?: {
+                "filter[sale_id]"?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: {
+                            page: number;
+                            per_page: number;
+                            total: number;
+                            last_page: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/validation-failed";
+                        /** @constant */
+                        title: "Validation Failed";
+                        /** @constant */
+                        status: 422;
+                        /** @constant */
+                        detail: "One or more fields failed validation.";
+                        errors: {
+                            status: [
+                                "Unknown status."
+                            ];
+                        };
+                    };
+                };
+            };
+        };
+    };
+    "customerReturn.store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoreCustomerReturnRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "customerReturn.show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The customer return ID */
+                customerReturn: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "customerReturn.approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The customer return ID */
+                customerReturn: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "customerReturn.reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The customer return ID */
+                customerReturn: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "customerReturn.refund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The customer return ID */
+                customerReturn: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
         };
     };
     "department.index": {
@@ -2847,6 +3201,141 @@ export interface operations {
                     };
                 };
             };
+        };
+    };
+    "sale.index": {
+        parameters: {
+            query?: {
+                "filter[warehouse_id]"?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: {
+                            page: number;
+                            per_page: number;
+                            total: number;
+                            last_page: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/validation-failed";
+                        /** @constant */
+                        title: "Validation Failed";
+                        /** @constant */
+                        status: 422;
+                        /** @constant */
+                        detail: "One or more fields failed validation.";
+                        errors: {
+                            status: [
+                                "Unknown status."
+                            ];
+                        };
+                    };
+                };
+            };
+        };
+    };
+    "sale.store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoreSaleRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "sale.show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The sale ID */
+                sale: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "sale.void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The sale ID */
+                sale: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
         };
     };
     "settings.show": {

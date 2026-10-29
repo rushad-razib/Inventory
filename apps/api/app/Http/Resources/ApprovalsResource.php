@@ -15,7 +15,7 @@ class ApprovalsResource extends JsonResource
         return [
             'purchase_orders' => PurchaseOrderResource::collection($this->resource['purchase_orders'])->resolve(),
             'adjustments' => AdjustmentResource::collection($this->resource['adjustments'])->resolve(),
-            'customer_returns' => [],
+            'customer_returns' => CustomerReturnResource::collection($this->resource['customer_returns'])->resolve(),
         ];
     }
 }

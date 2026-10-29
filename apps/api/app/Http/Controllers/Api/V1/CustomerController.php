@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customers\StoreCustomerRequest;
 use App\Http\Requests\Customers\UpdateCustomerRequest;
+use App\Http\Resources\CustomerPointEntryResource;
 use App\Http\Resources\CustomerResource;
 use App\Http\Responses\ApiResponse;
 use App\Http\Responses\ProblemResponse;
 use App\Models\Customer;
+use App\Models\CustomerPointEntry;
 use App\Support\BdMobile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -104,9 +106,12 @@ class CustomerController extends Controller
             return $this->forbidden('You do not have permission to view point entries.');
         }
 
-        return response()->json([
-            'data' => [],
-            'meta' => (object) [],
-        ]);
+        return ApiResponse::paginated(
+            CustomerPointEntry::query()
+                ->where('customer_id', $customer->id)
+                ->orderByDesc('occurred_at')
+                ->paginate($this->perPage($request)),
+            CustomerPointEntryResource::class,
+        );
     }
 }

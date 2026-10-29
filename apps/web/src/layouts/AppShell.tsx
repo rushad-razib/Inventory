@@ -63,6 +63,17 @@ export function AppShell() {
       label: "Supplier bills",
       visible: can(user, "purchasing.settle") || can(user, "reports.view"),
     },
+    { to: "/pos", label: "Till", visible: can(user, "sales.create") },
+    {
+      to: "/sales",
+      label: "Sales",
+      visible: can(user, "sales.create") || can(user, "sales.return") || can(user, "reports.view"),
+    },
+    {
+      to: "/customer-returns",
+      label: "Returns",
+      visible: can(user, "sales.return") || can(user, "sales.refund.approve"),
+    },
     {
       to: "/suppliers",
       label: "Suppliers",

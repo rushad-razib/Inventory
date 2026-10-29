@@ -275,6 +275,65 @@ final class StockLedger
         return $destinationLot;
     }
 
+    public function restoreToLot(
+        StockLot $lot,
+        int $quantity,
+        MovementType $type,
+        Model $source,
+        User $actor,
+        ?string $idempotencyKey,
+    ): void {
+        $balance = $this->lockBalance($lot->warehouse_id, $lot->product_id);
+        $locked = StockLot::query()->whereKey($lot->id)->lockForUpdate()->firstOrFail();
+
+        $locked->qty_on_hand += $quantity;
+        $locked->save();
+
+        $balance->on_hand += $quantity;
+        $balance->save();
+
+        $this->movement(
+            $locked->product_id,
+            $locked->warehouse_id,
+            $locked,
+            $type,
+            $quantity,
+            $source,
+            $actor,
+            $idempotencyKey,
+            null,
+        );
+    }
+
+    public function markDamaged(
+        StockLot $lot,
+        int $quantity,
+        Model $source,
+        User $actor,
+        ?string $idempotencyKey,
+    ): void {
+        $balance = $this->lockBalance($lot->warehouse_id, $lot->product_id);
+        $locked = StockLot::query()->whereKey($lot->id)->lockForUpdate()->firstOrFail();
+
+        $locked->qty_damaged += $quantity;
+        $locked->save();
+
+        $balance->damaged += $quantity;
+        $balance->save();
+
+        $this->movement(
+            $locked->product_id,
+            $locked->warehouse_id,
+            $locked,
+            MovementType::CustomerReturnDamaged,
+            $quantity,
+            $source,
+            $actor,
+            $idempotencyKey,
+            'damaged',
+        );
+    }
+
     private function movement(
         string $productId,
         string $warehouseId,
