@@ -171,6 +171,54 @@ final class StockLedger
         return $lot;
     }
 
+    /**
+     * Insert a new receipt lot. Never adds quantity onto an existing lot.
+     */
+    public function receiveLot(
+        string $warehouseId,
+        string $productId,
+        ?string $supplierId,
+        ?string $goodsReceiptId,
+        LotOwnership $ownership,
+        int $unitCost,
+        int $quantity,
+        Model $source,
+        User $actor,
+        ?string $idempotencyKey,
+    ): StockLot {
+        $balance = $this->lockBalance($warehouseId, $productId);
+
+        $lot = StockLot::query()->create([
+            'goods_receipt_id' => $goodsReceiptId,
+            'supplier_id' => $supplierId,
+            'product_id' => $productId,
+            'warehouse_id' => $warehouseId,
+            'unit_cost' => $unitCost,
+            'ownership' => $ownership,
+            'qty_received' => $quantity,
+            'qty_on_hand' => $quantity,
+            'qty_damaged' => 0,
+            'received_at' => now(),
+        ]);
+
+        $balance->on_hand += $quantity;
+        $balance->save();
+
+        $this->movement(
+            $productId,
+            $warehouseId,
+            $lot,
+            MovementType::Receipt,
+            $quantity,
+            $source,
+            $actor,
+            $idempotencyKey,
+            null,
+        );
+
+        return $lot;
+    }
+
     public function receiveSlice(
         string $sourceWarehouseId,
         string $destinationWarehouseId,

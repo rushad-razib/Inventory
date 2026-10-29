@@ -62,4 +62,12 @@ class StockLot extends Model
     {
         return $this->belongsTo(Warehouse::class);
     }
+
+    /**
+     * @return BelongsTo<GoodsReceipt, $this>
+     */
+    public function goodsReceipt(): BelongsTo
+    {
+        return $this->belongsTo(GoodsReceipt::class);
+    }
 }

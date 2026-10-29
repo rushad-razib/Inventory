@@ -1,15 +1,20 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AdjustmentController;
+use App\Http\Controllers\Api\V1\ApprovalController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\DepartmentController;
+use App\Http\Controllers\Api\V1\GoodsReceiptController;
 use App\Http\Controllers\Api\V1\ImageController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProductImageController;
+use App\Http\Controllers\Api\V1\PurchaseOrderController;
+use App\Http\Controllers\Api\V1\ReorderAlertController;
 use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\StockController;
+use App\Http\Controllers\Api\V1\SupplierBillController;
 use App\Http\Controllers\Api\V1\SupplierController;
 use App\Http\Controllers\Api\V1\SupplierProductController;
 use App\Http\Controllers\Api\V1\TransferController;
@@ -82,6 +87,27 @@ Route::prefix('v1')->group(function () {
         Route::post('/transfers/{transfer}/ship', [TransferController::class, 'ship']);
         Route::post('/transfers/{transfer}/receive', [TransferController::class, 'receive']);
         Route::post('/transfers/{transfer}/cancel', [TransferController::class, 'cancel']);
+
+        Route::get('/purchase-orders', [PurchaseOrderController::class, 'index']);
+        Route::post('/purchase-orders/from-alerts', [PurchaseOrderController::class, 'fromAlerts']);
+        Route::post('/purchase-orders', [PurchaseOrderController::class, 'store']);
+        Route::get('/purchase-orders/{purchase_order}', [PurchaseOrderController::class, 'show']);
+        Route::patch('/purchase-orders/{purchase_order}', [PurchaseOrderController::class, 'update']);
+        Route::post('/purchase-orders/{purchase_order}/submit', [PurchaseOrderController::class, 'submit']);
+        Route::post('/purchase-orders/{purchase_order}/approve', [PurchaseOrderController::class, 'approve']);
+        Route::post('/purchase-orders/{purchase_order}/reject', [PurchaseOrderController::class, 'reject']);
+        Route::post('/purchase-orders/{purchase_order}/cancel', [PurchaseOrderController::class, 'cancel']);
+
+        Route::get('/reorder-alerts', [ReorderAlertController::class, 'index']);
+
+        Route::get('/goods-receipts', [GoodsReceiptController::class, 'index']);
+        Route::post('/goods-receipts', [GoodsReceiptController::class, 'store']);
+        Route::get('/goods-receipts/{goods_receipt}', [GoodsReceiptController::class, 'show']);
+
+        Route::get('/approvals', [ApprovalController::class, 'index']);
+
+        Route::get('/supplier-bills', [SupplierBillController::class, 'index']);
+        Route::get('/supplier-bills/{supplier_bill}', [SupplierBillController::class, 'show']);
 
         Route::get('/adjustments', [AdjustmentController::class, 'index']);
         Route::post('/adjustments', [AdjustmentController::class, 'store']);

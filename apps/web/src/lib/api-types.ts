@@ -52,6 +52,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["approval.index"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/login": {
         parameters: {
             query?: never;
@@ -276,6 +292,38 @@ export interface paths {
         patch: operations["department.update"];
         trace?: never;
     };
+    "/v1/goods-receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["goodsReceipt.index"];
+        put?: never;
+        post: operations["goodsReceipt.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/goods-receipts/{goodsReceipt}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["goodsReceipt.show"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/images/{image}": {
         parameters: {
             query?: never;
@@ -350,6 +398,134 @@ export interface paths {
         get: operations["productImage.index"];
         put?: never;
         post: operations["productImage.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/purchase-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["purchaseOrder.index"];
+        put?: never;
+        post: operations["purchaseOrder.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/purchase-orders/from-alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["purchaseOrder.fromAlerts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/purchase-orders/{purchaseOrder}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["purchaseOrder.show"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["purchaseOrder.update"];
+        trace?: never;
+    };
+    "/v1/purchase-orders/{purchaseOrder}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["purchaseOrder.submit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/purchase-orders/{purchaseOrder}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["purchaseOrder.approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/purchase-orders/{purchaseOrder}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["purchaseOrder.reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/purchase-orders/{purchaseOrder}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["purchaseOrder.cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reorder-alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["reorderAlert.index"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -450,6 +626,38 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["supplier.update"];
+        trace?: never;
+    };
+    "/v1/supplier-bills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["supplierBill.index"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/supplier-bills/{supplierBill}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["supplierBill.show"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/suppliers/{supplier}/products": {
@@ -643,6 +851,15 @@ export interface components {
             email: string;
             password: string;
         };
+        /** PurchaseOrderFromAlertsRequest */
+        PurchaseOrderFromAlertsRequest: {
+            lines: {
+                /** Format: uuid */
+                warehouse_id: string;
+                /** Format: uuid */
+                product_id: string;
+            }[];
+        };
         /** StoreAdjustmentRequest */
         StoreAdjustmentRequest: {
             /** Format: uuid */
@@ -667,6 +884,20 @@ export interface components {
         /** StoreDepartmentRequest */
         StoreDepartmentRequest: {
             name: string;
+        };
+        /** StoreGoodsReceiptRequest */
+        StoreGoodsReceiptRequest: {
+            /** Format: uuid */
+            purchase_order_id?: string;
+            /** Format: uuid */
+            supplier_id?: string;
+            /** Format: uuid */
+            warehouse_id?: string;
+            lines: {
+                /** Format: uuid */
+                product_id: string;
+                quantity: number;
+            }[];
         };
         /** StoreImageRequest */
         StoreImageRequest: {
@@ -693,6 +924,21 @@ export interface components {
             preferred_supplier_id?: string | null;
             track_stock?: boolean;
             is_active?: boolean;
+        };
+        /** StorePurchaseOrderRequest */
+        StorePurchaseOrderRequest: {
+            /** Format: uuid */
+            supplier_id: string;
+            /** Format: uuid */
+            destination_warehouse_id: string;
+            /** Format: date-time */
+            expected_on?: string | null;
+            notes?: string | null;
+            lines: {
+                /** Format: uuid */
+                product_id: string;
+                quantity: number;
+            }[];
         };
         /** StoreSupplierProductRequest */
         StoreSupplierProductRequest: {
@@ -786,6 +1032,21 @@ export interface components {
             preferred_supplier_id?: string | null;
             track_stock?: boolean;
             is_active?: boolean;
+        };
+        /** UpdatePurchaseOrderRequest */
+        UpdatePurchaseOrderRequest: {
+            /** Format: uuid */
+            supplier_id: string;
+            /** Format: uuid */
+            destination_warehouse_id: string;
+            /** Format: date-time */
+            expected_on?: string | null;
+            notes?: string | null;
+            lines: {
+                /** Format: uuid */
+                product_id: string;
+                quantity: number;
+            }[];
         };
         /** UpdateSettingsRequest */
         UpdateSettingsRequest: {
@@ -1037,6 +1298,47 @@ export interface operations {
             401: components["responses"]["AuthenticationException"];
             403: components["responses"]["AuthorizationException"];
             404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "approval.index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/forbidden";
+                        /** @constant */
+                        title: "Forbidden";
+                        /** @constant */
+                        status: 403;
+                        /** @constant */
+                        detail: "You do not have permission to view approvals.";
+                        errors: string;
+                    };
+                };
+            };
         };
     };
     "auth.login": {
@@ -1751,6 +2053,92 @@ export interface operations {
             422: components["responses"]["ValidationException"];
         };
     };
+    "goodsReceipt.index": {
+        parameters: {
+            query?: {
+                "filter[warehouse_id]"?: string;
+                "filter[supplier_id]"?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: {
+                            page: number;
+                            per_page: number;
+                            total: number;
+                            last_page: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+        };
+    };
+    "goodsReceipt.store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoreGoodsReceiptRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "goodsReceipt.show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The goods receipt ID */
+                goodsReceipt: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
     "image.destroy": {
         parameters: {
             query?: never;
@@ -2129,6 +2517,336 @@ export interface operations {
             };
             404: components["responses"]["ModelNotFoundException"];
             422: components["responses"]["ValidationException"];
+        };
+    };
+    "purchaseOrder.index": {
+        parameters: {
+            query?: {
+                "filter[supplier_id]"?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: {
+                            page: number;
+                            per_page: number;
+                            total: number;
+                            last_page: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/validation-failed";
+                        /** @constant */
+                        title: "Validation Failed";
+                        /** @constant */
+                        status: 422;
+                        /** @constant */
+                        detail: "One or more fields failed validation.";
+                        errors: [
+                            [
+                                string
+                            ]
+                        ];
+                    };
+                };
+            };
+        };
+    };
+    "purchaseOrder.store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StorePurchaseOrderRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "purchaseOrder.fromAlerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseOrderFromAlertsRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "purchaseOrder.show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The purchase order ID */
+                purchaseOrder: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "purchaseOrder.update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The purchase order ID */
+                purchaseOrder: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePurchaseOrderRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "purchaseOrder.submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The purchase order ID */
+                purchaseOrder: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "purchaseOrder.approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The purchase order ID */
+                purchaseOrder: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "purchaseOrder.reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The purchase order ID */
+                purchaseOrder: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "purchaseOrder.cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The purchase order ID */
+                purchaseOrder: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "reorderAlert.index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: {
+                            page: number;
+                            per_page: number;
+                            total: number;
+                            last_page: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/forbidden";
+                        /** @constant */
+                        title: "Forbidden";
+                        /** @constant */
+                        status: 403;
+                        /** @constant */
+                        detail: "You do not have permission to view reorder alerts.";
+                        errors: string;
+                    };
+                };
+            };
         };
     };
     "settings.show": {
@@ -2577,6 +3295,88 @@ export interface operations {
             };
             404: components["responses"]["ModelNotFoundException"];
             422: components["responses"]["ValidationException"];
+        };
+    };
+    "supplierBill.index": {
+        parameters: {
+            query?: {
+                "filter[supplier_id]"?: string;
+                "filter[source_id]"?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: {
+                            page: number;
+                            per_page: number;
+                            total: number;
+                            last_page: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/validation-failed";
+                        /** @constant */
+                        title: "Validation Failed";
+                        /** @constant */
+                        status: 422;
+                        /** @constant */
+                        detail: "One or more fields failed validation.";
+                        errors: [
+                            [
+                                string
+                            ]
+                        ];
+                    };
+                };
+            };
+        };
+    };
+    "supplierBill.show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The supplier bill ID */
+                supplierBill: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: components["responses"]["AuthorizationException"];
+            404: components["responses"]["ModelNotFoundException"];
         };
     };
     "supplierProduct.index": {

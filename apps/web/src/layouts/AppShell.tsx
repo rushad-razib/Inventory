@@ -43,6 +43,27 @@ export function AppShell() {
       visible: can(user, "inventory.adjust") || can(user, "purchasing.approve"),
     },
     {
+      to: "/purchase-orders",
+      label: "Purchase orders",
+      visible: can(user, "purchasing.create") || can(user, "purchasing.approve") || can(user, "purchasing.receive"),
+    },
+    {
+      to: "/goods-receipts",
+      label: "Receipts",
+      visible: can(user, "purchasing.receive") || can(user, "inventory.view"),
+    },
+    { to: "/reorder-alerts", label: "Reorder alerts", visible: can(user, "purchasing.create") },
+    {
+      to: "/approvals",
+      label: "Approvals",
+      visible: can(user, "purchasing.approve") || can(user, "sales.refund.approve"),
+    },
+    {
+      to: "/supplier-bills",
+      label: "Supplier bills",
+      visible: can(user, "purchasing.settle") || can(user, "reports.view"),
+    },
+    {
       to: "/suppliers",
       label: "Suppliers",
       visible: can(user, "suppliers.manage") || can(user, "inventory.view"),

@@ -176,6 +176,55 @@ paths:
           $ref: '#/components/responses/ModelNotFoundException'
         401:
           $ref: '#/components/responses/AuthenticationException'
+  /v1/approvals:
+    get:
+      operationId: approval.index
+      tags:
+        - Approval
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to view approvals.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
   /v1/auth/login:
     post:
       operationId: auth.login
@@ -1057,6 +1106,109 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         422:
           $ref: '#/components/responses/ValidationException'
+  /v1/goods-receipts:
+    get:
+      operationId: goodsReceipt.index
+      tags:
+        - GoodsReceipt
+      parameters:
+        -
+          name: 'filter[warehouse_id]'
+          in: query
+          schema:
+            type: string
+        -
+          name: 'filter[supplier_id]'
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: goodsReceipt.store
+      tags:
+        - GoodsReceipt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreGoodsReceiptRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: string
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/goods-receipts/{goodsReceipt}':
+    get:
+      operationId: goodsReceipt.show
+      tags:
+        - GoodsReceipt
+      parameters:
+        -
+          name: goodsReceipt
+          in: path
+          required: true
+          description: 'The goods receipt ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
   '/v1/images/{image}':
     patch:
       operationId: image.update
@@ -1543,6 +1695,416 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         422:
           $ref: '#/components/responses/ValidationException'
+  /v1/purchase-orders:
+    get:
+      operationId: purchaseOrder.index
+      tags:
+        - PurchaseOrder
+      parameters:
+        -
+          name: 'filter[supplier_id]'
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        422:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/validation-failed
+                  title:
+                    type: string
+                    const: 'Validation Failed'
+                  status:
+                    type: integer
+                    const: 422
+                  detail:
+                    type: string
+                    const: 'One or more fields failed validation.'
+                  errors:
+                    type: array
+                    prefixItems:
+                      - { type: array, prefixItems: [{ type: string }], minItems: 1, maxItems: 1 }
+                    minItems: 1
+                    maxItems: 1
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: purchaseOrder.store
+      tags:
+        - PurchaseOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StorePurchaseOrderRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  /v1/purchase-orders/from-alerts:
+    post:
+      operationId: purchaseOrder.fromAlerts
+      tags:
+        - PurchaseOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderFromAlertsRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/purchase-orders/{purchaseOrder}':
+    get:
+      operationId: purchaseOrder.show
+      tags:
+        - PurchaseOrder
+      parameters:
+        -
+          name: purchaseOrder
+          in: path
+          required: true
+          description: 'The purchase order ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    patch:
+      operationId: purchaseOrder.update
+      tags:
+        - PurchaseOrder
+      parameters:
+        -
+          name: purchaseOrder
+          in: path
+          required: true
+          description: 'The purchase order ID'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePurchaseOrderRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/purchase-orders/{purchaseOrder}/submit':
+    post:
+      operationId: purchaseOrder.submit
+      tags:
+        - PurchaseOrder
+      parameters:
+        -
+          name: purchaseOrder
+          in: path
+          required: true
+          description: 'The purchase order ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/purchase-orders/{purchaseOrder}/approve':
+    post:
+      operationId: purchaseOrder.approve
+      tags:
+        - PurchaseOrder
+      parameters:
+        -
+          name: purchaseOrder
+          in: path
+          required: true
+          description: 'The purchase order ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/purchase-orders/{purchaseOrder}/reject':
+    post:
+      operationId: purchaseOrder.reject
+      tags:
+        - PurchaseOrder
+      parameters:
+        -
+          name: purchaseOrder
+          in: path
+          required: true
+          description: 'The purchase order ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/purchase-orders/{purchaseOrder}/cancel':
+    post:
+      operationId: purchaseOrder.cancel
+      tags:
+        - PurchaseOrder
+      parameters:
+        -
+          name: purchaseOrder
+          in: path
+          required: true
+          description: 'The purchase order ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/reorder-alerts:
+    get:
+      operationId: reorderAlert.index
+      tags:
+        - ReorderAlert
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to view reorder alerts.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
   /v1/settings:
     get:
       operationId: settings.show
@@ -2138,6 +2700,117 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         422:
           $ref: '#/components/responses/ValidationException'
+  /v1/supplier-bills:
+    get:
+      operationId: supplierBill.index
+      tags:
+        - SupplierBill
+      parameters:
+        -
+          name: 'filter[supplier_id]'
+          in: query
+          schema:
+            type: string
+        -
+          name: 'filter[source_id]'
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        422:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/validation-failed
+                  title:
+                    type: string
+                    const: 'Validation Failed'
+                  status:
+                    type: integer
+                    const: 422
+                  detail:
+                    type: string
+                    const: 'One or more fields failed validation.'
+                  errors:
+                    type: array
+                    prefixItems:
+                      - { type: array, prefixItems: [{ type: string }], minItems: 1, maxItems: 1 }
+                    minItems: 1
+                    maxItems: 1
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/supplier-bills/{supplierBill}':
+    get:
+      operationId: supplierBill.show
+      tags:
+        - SupplierBill
+      parameters:
+        -
+          name: supplierBill
+          in: path
+          required: true
+          description: 'The supplier bill ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
   '/v1/suppliers/{supplier}/products':
     get:
       operationId: supplierProduct.index
@@ -3073,6 +3746,27 @@ components:
         - email
         - password
       title: LoginRequest
+    PurchaseOrderFromAlertsRequest:
+      type: object
+      properties:
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              warehouse_id:
+                type: string
+                format: uuid
+              product_id:
+                type: string
+                format: uuid
+            required:
+              - warehouse_id
+              - product_id
+          minItems: 1
+      required:
+        - lines
+      title: PurchaseOrderFromAlertsRequest
     StoreAdjustmentRequest:
       type: object
       properties:
@@ -3133,6 +3827,37 @@ components:
       required:
         - name
       title: StoreDepartmentRequest
+    StoreGoodsReceiptRequest:
+      type: object
+      properties:
+        purchase_order_id:
+          type: string
+          format: uuid
+        supplier_id:
+          type: string
+          format: uuid
+        warehouse_id:
+          type: string
+          format: uuid
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id:
+                type: string
+                format: uuid
+              quantity:
+                type: integer
+                minimum: 1
+            required:
+              - product_id
+              - quantity
+          minItems: 1
+          uniqueItems: true
+      required:
+        - lines
+      title: StoreGoodsReceiptRequest
     StoreImageRequest:
       type: object
       properties:
@@ -3196,6 +3921,46 @@ components:
         - name
         - sell_price
       title: StoreProductRequest
+    StorePurchaseOrderRequest:
+      type: object
+      properties:
+        supplier_id:
+          type: string
+          format: uuid
+        destination_warehouse_id:
+          type: string
+          format: uuid
+        expected_on:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        notes:
+          type:
+            - string
+            - 'null'
+          maxLength: 2000
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id:
+                type: string
+                format: uuid
+              quantity:
+                type: integer
+                minimum: 1
+            required:
+              - product_id
+              - quantity
+          minItems: 1
+          uniqueItems: true
+      required:
+        - supplier_id
+        - destination_warehouse_id
+        - lines
+      title: StorePurchaseOrderRequest
     StoreSupplierProductRequest:
       type: object
       properties:
@@ -3440,6 +4205,46 @@ components:
         is_active:
           type: boolean
       title: UpdateProductRequest
+    UpdatePurchaseOrderRequest:
+      type: object
+      properties:
+        supplier_id:
+          type: string
+          format: uuid
+        destination_warehouse_id:
+          type: string
+          format: uuid
+        expected_on:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        notes:
+          type:
+            - string
+            - 'null'
+          maxLength: 2000
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id:
+                type: string
+                format: uuid
+              quantity:
+                type: integer
+                minimum: 1
+            required:
+              - product_id
+              - quantity
+          minItems: 1
+          uniqueItems: true
+      required:
+        - supplier_id
+        - destination_warehouse_id
+        - lines
+      title: UpdatePurchaseOrderRequest
     UpdateSettingsRequest:
       type: object
       properties:

@@ -785,3 +785,218 @@ export async function rejectAdjustment(id: string): Promise<Adjustment> {
   const payload = assertData(data, error, response.status);
   return payload.data as unknown as Adjustment;
 }
+
+export type PurchaseOrderLine = {
+  id: string;
+  product_id: string;
+  quantity_ordered: number;
+  quantity_received: number;
+  unit_cost: number;
+  product: { id: string; sku: string; name: string };
+};
+
+export type PurchaseOrder = {
+  id: string;
+  number: string;
+  supplier_id: string;
+  destination_warehouse_id: string;
+  status: string;
+  requester_id: string;
+  approver_id: string | null;
+  expected_on: string | null;
+  notes: string | null;
+  subtotal: number;
+  tax: number;
+  total: number;
+  created_at: string | null;
+  supplier: { id: string; code: string; name: string; supply_mode: string; payment_terms_days: number };
+  destination_warehouse: NamedRef;
+  requester: { id: string; name: string };
+  approver: { id: string; name: string } | null;
+  lines: PurchaseOrderLine[];
+};
+
+export type PurchaseOrderInput = {
+  supplier_id: string;
+  destination_warehouse_id: string;
+  expected_on?: string | null;
+  notes?: string | null;
+  lines: { product_id: string; quantity: number }[];
+};
+
+export type GoodsReceipt = {
+  id: string;
+  purchase_order_id: string | null;
+  supplier_id: string;
+  warehouse_id: string;
+  created_at: string | null;
+  supplier: { id: string; code: string; name: string; supply_mode: string };
+  warehouse: NamedRef;
+  actor: { id: string; name: string };
+  purchase_order: { id: string; number: string; status: string } | null;
+  lines: {
+    id: string;
+    product_id: string;
+    quantity: number;
+    unit_cost: number;
+    product: { id: string; sku: string; name: string };
+  }[];
+  lots: {
+    id: string;
+    product_id: string;
+    ownership: string;
+    unit_cost: number;
+    qty_received: number;
+    qty_on_hand: number;
+  }[];
+  bill: {
+    id: string;
+    status: string;
+    amount: number;
+    amount_paid: number;
+    due_on: string | null;
+  } | null;
+};
+
+export type ReorderAlert = {
+  warehouse_id: string;
+  product_id: string;
+  on_hand: number;
+  reorder_point: number;
+  reorder_quantity: number;
+  preferred_supplier_id: string | null;
+  warehouse: NamedRef;
+  product: { id: string; sku: string; name: string };
+  preferred_supplier: { id: string; code: string; name: string; supply_mode: string } | null;
+};
+
+export type SupplierBill = {
+  id: string;
+  supplier_id: string;
+  source_type: string;
+  source_id: string;
+  status: string;
+  amount: number;
+  amount_paid: number;
+  due_on: string | null;
+  supplier: NamedRef;
+};
+
+export type Approvals = {
+  purchase_orders: PurchaseOrder[];
+  adjustments: Adjustment[];
+  customer_returns: unknown[];
+};
+
+export async function listPurchaseOrders(): Promise<{ data: PurchaseOrder[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/purchase-orders");
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as PurchaseOrder[],
+    meta: payload.meta,
+  };
+}
+
+export async function createPurchaseOrder(body: PurchaseOrderInput): Promise<PurchaseOrder> {
+  const { data, error, response } = await apiClient.POST("/v1/purchase-orders", { body });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as PurchaseOrder;
+}
+
+export async function updatePurchaseOrder(id: string, body: PurchaseOrderInput): Promise<PurchaseOrder> {
+  const { data, error, response } = await apiClient.PATCH("/v1/purchase-orders/{purchaseOrder}", {
+    params: { path: { purchaseOrder: id } },
+    body,
+  });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as PurchaseOrder;
+}
+
+async function postPurchaseOrderAction(
+  path:
+    | "/v1/purchase-orders/{purchaseOrder}/submit"
+    | "/v1/purchase-orders/{purchaseOrder}/approve"
+    | "/v1/purchase-orders/{purchaseOrder}/reject"
+    | "/v1/purchase-orders/{purchaseOrder}/cancel",
+  id: string,
+): Promise<PurchaseOrder> {
+  const { data, error, response } = await apiClient.POST(path, {
+    params: { path: { purchaseOrder: id } },
+  });
+  const payload = assertData(data, error, response.status);
+  return (payload as unknown as { data: PurchaseOrder }).data;
+}
+
+export function submitPurchaseOrder(id: string): Promise<PurchaseOrder> {
+  return postPurchaseOrderAction("/v1/purchase-orders/{purchaseOrder}/submit", id);
+}
+
+export function approvePurchaseOrder(id: string): Promise<PurchaseOrder> {
+  return postPurchaseOrderAction("/v1/purchase-orders/{purchaseOrder}/approve", id);
+}
+
+export function rejectPurchaseOrder(id: string): Promise<PurchaseOrder> {
+  return postPurchaseOrderAction("/v1/purchase-orders/{purchaseOrder}/reject", id);
+}
+
+export function cancelPurchaseOrder(id: string): Promise<PurchaseOrder> {
+  return postPurchaseOrderAction("/v1/purchase-orders/{purchaseOrder}/cancel", id);
+}
+
+export async function createPurchaseOrdersFromAlerts(lines: {
+  warehouse_id: string;
+  product_id: string;
+}[]): Promise<PurchaseOrder[]> {
+  const { data, error, response } = await apiClient.POST("/v1/purchase-orders/from-alerts", {
+    body: { lines },
+  });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as PurchaseOrder[];
+}
+
+export async function listReorderAlerts(): Promise<{ data: ReorderAlert[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/reorder-alerts");
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as ReorderAlert[],
+    meta: payload.meta,
+  };
+}
+
+export async function listGoodsReceipts(): Promise<{ data: GoodsReceipt[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/goods-receipts");
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as GoodsReceipt[],
+    meta: payload.meta,
+  };
+}
+
+export async function createGoodsReceipt(body: {
+  purchase_order_id?: string;
+  supplier_id?: string;
+  warehouse_id?: string;
+  lines: { product_id: string; quantity: number }[];
+}): Promise<GoodsReceipt> {
+  const { data, error, response } = await apiClient.POST("/v1/goods-receipts", {
+    body,
+    headers: idempotencyHeaders(),
+  });
+  const payload = assertData(data, error, response.status);
+  return (payload as unknown as { data: GoodsReceipt }).data;
+}
+
+export async function listApprovals(): Promise<Approvals> {
+  const { data, error, response } = await apiClient.GET("/v1/approvals");
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Approvals;
+}
+
+export async function listSupplierBills(): Promise<{ data: SupplierBill[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/supplier-bills");
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as SupplierBill[],
+    meta: payload.meta,
+  };
+}
