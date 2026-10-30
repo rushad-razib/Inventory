@@ -25,6 +25,8 @@ import { SalesPage } from "./pages/SalesPage";
 import { PosPage } from "./pages/PosPage";
 import { CustomerReturnsPage } from "./pages/CustomerReturnsPage";
 import { SupplierBillsPage } from "./pages/SupplierBillsPage";
+import { SupplierReturnsPage } from "./pages/SupplierReturnsPage";
+import { CashBookPage } from "./pages/CashBookPage";
 
 const queryClient = new QueryClient();
 
@@ -92,6 +94,8 @@ export default function App() {
               <Route path="reorder-alerts" element={<ReorderAlertsPage />} />
               <Route path="approvals" element={<ApprovalsPage />} />
               <Route path="supplier-bills" element={<SupplierBillsPage />} />
+              <Route path="supplier-returns" element={<SupplierReturnsPage />} />
+              <Route path="cash-book" element={<CashBookPage />} />
               <Route path="pos" element={<PosPage />} />
               <Route path="sales" element={<SalesPage />} />
               <Route path="customer-returns" element={<CustomerReturnsPage />} />

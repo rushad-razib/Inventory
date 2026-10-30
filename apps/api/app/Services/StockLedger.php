@@ -334,6 +334,39 @@ final class StockLedger
         );
     }
 
+    public function releaseDamaged(
+        StockLot $lot,
+        int $quantity,
+        Model $source,
+        User $actor,
+        ?string $idempotencyKey,
+    ): void {
+        $balance = $this->lockBalance($lot->warehouse_id, $lot->product_id);
+        $locked = StockLot::query()->whereKey($lot->id)->lockForUpdate()->firstOrFail();
+
+        if ($locked->qty_damaged < $quantity) {
+            throw new LedgerException('invalid-state', 'Damaged quantity is lower than this supplier return.');
+        }
+
+        $locked->qty_damaged -= $quantity;
+        $locked->save();
+
+        $balance->damaged -= $quantity;
+        $balance->save();
+
+        $this->movement(
+            $locked->product_id,
+            $locked->warehouse_id,
+            $locked,
+            MovementType::SupplierReturn,
+            -$quantity,
+            $source,
+            $actor,
+            $idempotencyKey,
+            null,
+        );
+    }
+
     private function movement(
         string $productId,
         string $warehouseId,

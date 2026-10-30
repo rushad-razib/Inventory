@@ -60,8 +60,18 @@ export function AppShell() {
     },
     {
       to: "/supplier-bills",
-      label: "Supplier bills",
+      label: "Payables",
       visible: can(user, "purchasing.settle") || can(user, "reports.view"),
+    },
+    {
+      to: "/supplier-returns",
+      label: "Supplier returns",
+      visible: can(user, "supplier_returns.manage") || can(user, "purchasing.settle"),
+    },
+    {
+      to: "/cash-book",
+      label: "Cash book",
+      visible: can(user, "reports.view") || can(user, "purchasing.settle"),
     },
     { to: "/pos", label: "Till", visible: can(user, "sales.create") },
     {

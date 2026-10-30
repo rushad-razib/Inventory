@@ -16,4 +16,9 @@ class SupplierBillPolicy
     {
         return $this->viewAny($user);
     }
+
+    public function settle(User $user): bool
+    {
+        return $user->can('purchasing.settle');
+    }
 }

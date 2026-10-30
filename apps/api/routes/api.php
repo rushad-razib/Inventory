@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AdjustmentController;
 use App\Http\Controllers\Api\V1\ApprovalController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CashEntryController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\CustomerReturnController;
@@ -19,6 +20,8 @@ use App\Http\Controllers\Api\V1\StockController;
 use App\Http\Controllers\Api\V1\SupplierBillController;
 use App\Http\Controllers\Api\V1\SupplierController;
 use App\Http\Controllers\Api\V1\SupplierProductController;
+use App\Http\Controllers\Api\V1\SupplierReturnController;
+use App\Http\Controllers\Api\V1\SupplierSettlementController;
 use App\Http\Controllers\Api\V1\TransferController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\UserImageController;
@@ -110,6 +113,18 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/supplier-bills', [SupplierBillController::class, 'index']);
         Route::get('/supplier-bills/{supplier_bill}', [SupplierBillController::class, 'show']);
+        Route::post('/supplier-settlements', [SupplierSettlementController::class, 'store']);
+        Route::post('/supplier-refunds', [SupplierSettlementController::class, 'refund']);
+
+        Route::get('/supplier-returns', [SupplierReturnController::class, 'index']);
+        Route::post('/supplier-returns', [SupplierReturnController::class, 'store']);
+        Route::get('/supplier-returns/{supplier_return}', [SupplierReturnController::class, 'show']);
+        Route::post('/supplier-returns/{supplier_return}/ship', [SupplierReturnController::class, 'ship']);
+        Route::post('/supplier-returns/{supplier_return}/accept', [SupplierReturnController::class, 'accept']);
+        Route::post('/supplier-returns/{supplier_return}/reject', [SupplierReturnController::class, 'reject']);
+
+        Route::get('/cash-entries', [CashEntryController::class, 'index']);
+        Route::get('/cash-balances', [CashEntryController::class, 'balances']);
 
         Route::get('/sales', [SaleController::class, 'index']);
         Route::post('/sales', [SaleController::class, 'store']);

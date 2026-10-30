@@ -6,6 +6,7 @@ use App\Enums\SupplierBillStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class SupplierBill extends Model
@@ -51,5 +52,18 @@ class SupplierBill extends Model
     public function source(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * @return HasMany<CreditNote, $this>
+     */
+    public function creditNotes(): HasMany
+    {
+        return $this->hasMany(CreditNote::class);
+    }
+
+    public function remainder(): int
+    {
+        return $this->amount - $this->amount_paid - $this->credited_amount;
     }
 }

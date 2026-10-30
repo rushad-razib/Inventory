@@ -10,17 +10,20 @@ use App\Http\Responses\ProblemResponse;
 use App\Models\GoodsReceipt;
 use App\Models\SaleLineAllocation;
 use App\Models\SupplierBill;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 
 class SupplierBillController extends Controller
 {
+    #[QueryParameter('filter[status]', description: 'open, settled, or credited', type: 'string')]
+    #[QueryParameter('filter[source]', description: 'goods_receipt or sale_allocation', type: 'string')]
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', SupplierBill::class);
 
-        $query = SupplierBill::query()->with('supplier');
+        $query = SupplierBill::query()->with(['supplier', 'creditNotes']);
 
         if ($request->filled('filter.supplier_id')) {
             $query->where('supplier_id', $request->input('filter.supplier_id'));
@@ -67,7 +70,7 @@ class SupplierBillController extends Controller
     {
         $this->authorize('view', $supplierBill);
 
-        $supplierBill->load('supplier');
+        $supplierBill->load(['supplier', 'creditNotes']);
 
         return ApiResponse::data(new SupplierBillResource($supplierBill));
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\CreditNote;
 use App\Models\GoodsReceipt;
 use App\Models\SaleLineAllocation;
 use App\Models\SupplierBill;
@@ -36,6 +37,11 @@ class SupplierBillResource extends JsonResource
                 'code' => $this->supplier->code,
                 'name' => $this->supplier->name,
             ],
+            'credit_notes' => $this->creditNotes->map(fn (CreditNote $note): array => [
+                'id' => $note->id,
+                'supplier_return_id' => $note->supplier_return_id,
+                'amount' => $note->amount,
+            ])->values()->all(),
         ];
     }
 }

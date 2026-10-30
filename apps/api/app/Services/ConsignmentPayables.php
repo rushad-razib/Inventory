@@ -6,6 +6,7 @@ use App\Enums\SupplierBillStatus;
 use App\Models\Sale;
 use App\Models\SaleLineAllocation;
 use App\Models\SupplierBill;
+use App\Models\SupplierCredit;
 
 final class ConsignmentPayables
 {
@@ -21,18 +22,32 @@ final class ConsignmentPayables
             ->lockForUpdate()
             ->first();
 
-        if ($bill === null || $bill->status !== SupplierBillStatus::Open) {
+        if ($bill === null) {
             return;
         }
 
-        $open = $bill->amount - $bill->amount_paid - $bill->credited_amount;
-        $bill->credited_amount += min($amount, max($open, 0));
+        if ($bill->status === SupplierBillStatus::Open) {
+            $open = $bill->remainder();
+            $apply = min($amount, max($open, 0));
+            $bill->credited_amount += $apply;
 
-        if ($bill->amount - $bill->amount_paid - $bill->credited_amount <= 0) {
-            $bill->status = SupplierBillStatus::Credited;
+            if ($bill->remainder() <= 0) {
+                $bill->status = SupplierBillStatus::Credited;
+            }
+
+            $bill->save();
+            $amount -= $apply;
         }
 
-        $bill->save();
+        if ($amount > 0 && $bill->amount_paid > 0) {
+            SupplierCredit::query()->create([
+                'supplier_id' => $bill->supplier_id,
+                'amount' => $amount,
+                'amount_applied' => 0,
+                'source_type' => $allocation->getMorphClass(),
+                'source_id' => $allocation->id,
+            ]);
+        }
     }
 
     public function creditOpenBills(Sale $sale): void

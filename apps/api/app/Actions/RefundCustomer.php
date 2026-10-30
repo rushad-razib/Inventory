@@ -174,6 +174,7 @@ final class RefundCustomer
                     'quantity' => $take,
                     'unit_cost' => $allocation->unit_cost,
                     'customer_return_id' => $return->id,
+                    'sale_line_allocation_id' => $allocation->id,
                     'status' => SupplierReturnStatus::Draft,
                 ]);
             }

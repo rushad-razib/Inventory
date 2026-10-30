@@ -405,6 +405,102 @@ paths:
                   - errors
         401:
           $ref: '#/components/responses/AuthenticationException'
+  /v1/cash-entries:
+    get:
+      operationId: cashEntry.index
+      tags:
+        - CashEntry
+      parameters:
+        -
+          name: 'filter[location]'
+          in: query
+          description: 'till or bank'
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        422:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/validation-failed
+                  title:
+                    type: string
+                    const: 'Validation Failed'
+                  status:
+                    type: integer
+                    const: 422
+                  detail:
+                    type: string
+                    const: 'One or more fields failed validation.'
+                  errors:
+                    type: object
+                    properties:
+                      location: { type: array, prefixItems: [{ type: string, const: 'Unknown location.' }], minItems: 1, maxItems: 1 }
+                    required:
+                      - location
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/cash-balances:
+    get:
+      operationId: cashEntry.balances
+      tags:
+        - CashEntry
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
   /v1/categories:
     get:
       operationId: category.index
@@ -3122,6 +3218,18 @@ paths:
           in: query
           schema:
             type: string
+        -
+          name: 'filter[status]'
+          in: query
+          description: 'open, settled, or credited'
+          schema:
+            type: string
+        -
+          name: 'filter[source]'
+          in: query
+          description: 'goods_receipt or sale_allocation'
+          schema:
+            type: string
       responses:
         200:
           description: ''
@@ -3417,6 +3525,291 @@ paths:
                   - errors
         404:
           $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  /v1/supplier-returns:
+    get:
+      operationId: supplierReturn.index
+      tags:
+        - SupplierReturn
+      parameters:
+        -
+          name: 'filter[status]'
+          in: query
+          description: 'draft, shipped, accepted, or rejected_by_supplier'
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        422:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/validation-failed
+                  title:
+                    type: string
+                    const: 'Validation Failed'
+                  status:
+                    type: integer
+                    const: 422
+                  detail:
+                    type: string
+                    const: 'One or more fields failed validation.'
+                  errors:
+                    type: object
+                    properties:
+                      status: { type: array, prefixItems: [{ type: string, const: 'Unknown status.' }], minItems: 1, maxItems: 1 }
+                    required:
+                      - status
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: supplierReturn.store
+      tags:
+        - SupplierReturn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreSupplierReturnRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/supplier-returns/{supplierReturn}':
+    get:
+      operationId: supplierReturn.show
+      tags:
+        - SupplierReturn
+      parameters:
+        -
+          name: supplierReturn
+          in: path
+          required: true
+          description: 'The supplier return ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/supplier-returns/{supplierReturn}/ship':
+    post:
+      operationId: supplierReturn.ship
+      tags:
+        - SupplierReturn
+      parameters:
+        -
+          name: supplierReturn
+          in: path
+          required: true
+          description: 'The supplier return ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/supplier-returns/{supplierReturn}/accept':
+    post:
+      operationId: supplierReturn.accept
+      tags:
+        - SupplierReturn
+      parameters:
+        -
+          name: supplierReturn
+          in: path
+          required: true
+          description: 'The supplier return ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: string
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  '/v1/supplier-returns/{supplierReturn}/reject':
+    post:
+      operationId: supplierReturn.reject
+      tags:
+        - SupplierReturn
+      parameters:
+        -
+          name: supplierReturn
+          in: path
+          required: true
+          description: 'The supplier return ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/supplier-settlements:
+    post:
+      operationId: supplierSettlement.store
+      tags:
+        - SupplierSettlement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreSupplierSettlementRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: string
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  /v1/supplier-refunds:
+    post:
+      operationId: supplierSettlement.refund
+      tags:
+        - SupplierSettlement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreSupplierRefundRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: string
+        403:
+          $ref: '#/components/responses/AuthorizationException'
         401:
           $ref: '#/components/responses/AuthenticationException'
         422:
@@ -4466,6 +4859,15 @@ components:
         - product_id
         - agreed_unit_cost
       title: StoreSupplierProductRequest
+    StoreSupplierRefundRequest:
+      type: object
+      properties:
+        supplier_return_id:
+          type: string
+          format: uuid
+      required:
+        - supplier_return_id
+      title: StoreSupplierRefundRequest
     StoreSupplierRequest:
       type: object
       properties:
@@ -4522,6 +4924,32 @@ components:
         - supply_mode
         - status
       title: StoreSupplierRequest
+    StoreSupplierReturnRequest:
+      type: object
+      properties:
+        stock_lot_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+      required:
+        - stock_lot_id
+        - quantity
+      title: StoreSupplierReturnRequest
+    StoreSupplierSettlementRequest:
+      type: object
+      properties:
+        bill_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+          uniqueItems: true
+      required:
+        - bill_ids
+      title: StoreSupplierSettlementRequest
     StoreTransferRequest:
       type: object
       properties:

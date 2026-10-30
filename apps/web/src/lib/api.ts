@@ -881,6 +881,7 @@ export type SupplierBill = {
   credited_amount: number;
   due_on: string | null;
   supplier: NamedRef;
+  credit_notes: { id: string; supplier_return_id: string | null; amount: number }[];
 };
 
 export type SaleLine = {
@@ -1063,13 +1064,161 @@ export async function listApprovals(): Promise<Approvals> {
   return payload.data as unknown as Approvals;
 }
 
-export async function listSupplierBills(): Promise<{ data: SupplierBill[]; meta: PaginatedMeta }> {
-  const { data, error, response } = await apiClient.GET("/v1/supplier-bills");
+export async function listSupplierBills(filters?: {
+  supplier_id?: string;
+  status?: string;
+}): Promise<{ data: SupplierBill[]; meta: PaginatedMeta }> {
+  const query: {
+    "filter[supplier_id]"?: string;
+    "filter[status]"?: string;
+  } = {};
+  if (filters?.supplier_id) {
+    query["filter[supplier_id]"] = filters.supplier_id;
+  }
+  if (filters?.status) {
+    query["filter[status]"] = filters.status;
+  }
+
+  const { data, error, response } = await apiClient.GET("/v1/supplier-bills", {
+    params: { query },
+  });
   const payload = assertData(data, error, response.status);
   return {
     data: payload.data as unknown as SupplierBill[],
     meta: payload.meta,
   };
+}
+
+export type SupplierSettlement = {
+  id: string;
+  supplier_id: string;
+  amount: number;
+  cash_entry_id: string | null;
+  created_at: string | null;
+  supplier: NamedRef;
+  bills: { id: string; amount: number; status: string }[];
+};
+
+export async function createSupplierSettlement(billIds: string[]): Promise<SupplierSettlement> {
+  const { data, error, response } = await apiClient.POST("/v1/supplier-settlements", {
+    body: { bill_ids: billIds },
+    headers: idempotencyHeaders(),
+  });
+  const payload = assertData(data, error, response.status);
+  return (payload as unknown as { data: SupplierSettlement }).data;
+}
+
+export type SupplierReturn = {
+  id: string;
+  stock_lot_id: string;
+  quantity: number;
+  unit_cost: number;
+  credited_amount: number;
+  customer_return_id: string | null;
+  sale_line_allocation_id: string | null;
+  status: string;
+  created_at: string | null;
+  lot: {
+    id: string;
+    ownership: string;
+    qty_damaged: number;
+    warehouse: NamedRef;
+    product: { id: string; sku: string; name: string };
+    supplier: NamedRef | null;
+  };
+  credit_note: { id: string; supplier_bill_id: string; amount: number } | null;
+  refund_receivable: { id: string; amount: number; status: string } | null;
+};
+
+export async function listSupplierReturns(): Promise<{ data: SupplierReturn[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/supplier-returns");
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as SupplierReturn[],
+    meta: payload.meta,
+  };
+}
+
+export async function createSupplierReturn(body: {
+  stock_lot_id: string;
+  quantity: number;
+}): Promise<SupplierReturn> {
+  const { data, error, response } = await apiClient.POST("/v1/supplier-returns", { body });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as SupplierReturn;
+}
+
+export async function shipSupplierReturn(id: string): Promise<SupplierReturn> {
+  const { data, error, response } = await apiClient.POST("/v1/supplier-returns/{supplierReturn}/ship", {
+    params: { path: { supplierReturn: id } },
+  });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as SupplierReturn;
+}
+
+export async function acceptSupplierReturn(id: string): Promise<SupplierReturn> {
+  const { data, error, response } = await apiClient.POST("/v1/supplier-returns/{supplierReturn}/accept", {
+    params: { path: { supplierReturn: id } },
+    headers: idempotencyHeaders(),
+  });
+  const payload = assertData(data, error, response.status);
+  return (payload as unknown as { data: SupplierReturn }).data;
+}
+
+export async function rejectSupplierReturn(id: string): Promise<SupplierReturn> {
+  const { data, error, response } = await apiClient.POST("/v1/supplier-returns/{supplierReturn}/reject", {
+    params: { path: { supplierReturn: id } },
+  });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as SupplierReturn;
+}
+
+export async function recordSupplierRefund(supplierReturnId: string): Promise<SupplierReturn> {
+  const { data, error, response } = await apiClient.POST("/v1/supplier-refunds", {
+    body: { supplier_return_id: supplierReturnId },
+    headers: idempotencyHeaders(),
+  });
+  const payload = assertData(data, error, response.status);
+  return (payload as unknown as { data: SupplierReturn }).data;
+}
+
+export type CashEntry = {
+  id: string;
+  location: string;
+  direction: string;
+  type: string;
+  amount: number;
+  source_type: string;
+  source_id: string;
+  actor_id: string | null;
+  occurred_at: string | null;
+  actor: { id: string; name: string } | null;
+};
+
+export type CashBalances = {
+  till: number;
+  bank: number;
+};
+
+export async function listCashEntries(
+  location?: "till" | "bank",
+): Promise<{ data: CashEntry[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/cash-entries", {
+    params: {
+      query: location ? { "filter[location]": location } : {},
+    },
+  });
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as CashEntry[],
+    meta: payload.meta,
+  };
+}
+
+export async function getCashBalances(): Promise<CashBalances> {
+  const { data, error, response } = await apiClient.GET("/v1/cash-balances");
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as CashBalances;
 }
 
 export async function lookupProduct(barcode: string): Promise<Product | null> {
