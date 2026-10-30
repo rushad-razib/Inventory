@@ -1304,3 +1304,231 @@ export async function refundCustomerReturn(id: string): Promise<CustomerReturn> 
   const payload = assertData(data, error, response.status);
   return (payload as unknown as { data: CustomerReturn }).data;
 }
+
+export type ReportGroup = "product" | "category";
+
+export type ReportRange = {
+  from?: string;
+  to?: string;
+  group?: ReportGroup;
+};
+
+export type DashboardTiles = {
+  owned_value: number;
+  consignment_value: number;
+  low_stock: number;
+  sales_today: number;
+  open_purchase_orders: number;
+  pending_approvals: number;
+  payables_due: number;
+  till: number;
+  bank: number;
+};
+
+export type DemandPoint = {
+  date: string;
+  group_id: string | null;
+  group_label: string;
+  net_units: number;
+  net_taka: number;
+};
+
+export type RoiPoint = {
+  group_id: string | null;
+  group_label: string;
+  net_units: number;
+  net_sales: number;
+  cost: number;
+  roi: string;
+};
+
+export type DashboardPayload = {
+  tiles: DashboardTiles;
+  demand: DemandPoint[];
+  roi: RoiPoint[];
+};
+
+export type SalesReportRow = {
+  date: string;
+  sale_count: number;
+  points_redeemed: number;
+  cash: number;
+  card: number;
+};
+
+export type StockReportRow = {
+  warehouse_id: string;
+  warehouse_code: string;
+  warehouse_name: string;
+  product_id: string;
+  sku: string;
+  product_name: string;
+  owned_on_hand: number;
+  consignment_on_hand: number;
+  owned_value: number;
+  consignment_value: number;
+};
+
+export type MovementReportRow = {
+  id: string;
+  type: string;
+  quantity: number;
+  unit_cost: number;
+  occurred_at: string | null;
+  warehouse: { code: string; name: string };
+  product: { sku: string; name: string };
+};
+
+export type SupplierSpendRow = {
+  supplier_id: string;
+  supplier_name: string;
+  billed: number;
+  paid: number;
+  refunded: number;
+};
+
+export type PurchaseOrderReportRow = {
+  id: string;
+  number: string;
+  supplier_name: string;
+  status: string;
+  quantity_ordered: number;
+  quantity_received: number;
+};
+
+export type AuditLogRow = {
+  id: string;
+  action: string;
+  auditable_type: string;
+  auditable_id: string;
+  actor_id: string | null;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  created_at: string | null;
+  actor: { id: string; name: string } | null;
+};
+
+function rangeQuery(range: ReportRange): { from?: string; to?: string; group?: string } {
+  return {
+    ...(range.from ? { from: range.from } : {}),
+    ...(range.to ? { to: range.to } : {}),
+    ...(range.group ? { group: range.group } : {}),
+  };
+}
+
+export async function getDashboard(range: ReportRange = {}): Promise<{ data: DashboardPayload; meta: ReportRange }> {
+  const { data, error, response } = await apiClient.GET("/v1/dashboard", {
+    params: { query: rangeQuery(range) },
+  });
+  const payload = assertData(data, error, response.status);
+  return payload as unknown as { data: DashboardPayload; meta: ReportRange };
+}
+
+export async function getDemandReport(range: ReportRange): Promise<DemandPoint[]> {
+  const { data, error, response } = await apiClient.GET("/v1/reports/demand", {
+    params: { query: rangeQuery(range) },
+  });
+  const payload = assertData(data, error, response.status);
+  return (payload as unknown as { data: DemandPoint[] }).data;
+}
+
+export async function getRoiReport(range: ReportRange): Promise<RoiPoint[]> {
+  const { data, error, response } = await apiClient.GET("/v1/reports/roi", {
+    params: { query: rangeQuery(range) },
+  });
+  const payload = assertData(data, error, response.status);
+  return (payload as unknown as { data: RoiPoint[] }).data;
+}
+
+export async function getSalesReport(range: ReportRange): Promise<SalesReportRow[]> {
+  const { data, error, response } = await apiClient.GET("/v1/reports/sales", {
+    params: { query: { from: range.from, to: range.to } },
+  });
+  const payload = assertData(data, error, response.status);
+  return (payload as unknown as { data: SalesReportRow[] }).data;
+}
+
+export async function getStockReport(): Promise<StockReportRow[]> {
+  const { data, error, response } = await apiClient.GET("/v1/reports/stock");
+  const payload = assertData(data, error, response.status);
+  return (payload as unknown as { data: StockReportRow[] }).data;
+}
+
+export async function getMovementReport(filters: {
+  type?: string;
+  warehouseId?: string;
+  productId?: string;
+  from?: string;
+  to?: string;
+}): Promise<MovementReportRow[]> {
+  const { data, error, response } = await apiClient.GET("/v1/reports/movements", {
+    params: {
+      query: {
+        ...(filters.type ? { "filter[type]": filters.type } : {}),
+        ...(filters.warehouseId ? { "filter[warehouse_id]": filters.warehouseId } : {}),
+        ...(filters.productId ? { "filter[product_id]": filters.productId } : {}),
+        ...(filters.from ? { "filter[from]": filters.from } : {}),
+        ...(filters.to ? { "filter[to]": filters.to } : {}),
+      },
+    },
+  });
+  const payload = assertData(data, error, response.status);
+  return (payload as unknown as { data: MovementReportRow[] }).data;
+}
+
+export async function getSupplierSpendReport(): Promise<SupplierSpendRow[]> {
+  const { data, error, response } = await apiClient.GET("/v1/reports/supplier-spend");
+  const payload = assertData(data, error, response.status);
+  return (payload as unknown as { data: SupplierSpendRow[] }).data;
+}
+
+export async function getPurchaseOrderReport(): Promise<PurchaseOrderReportRow[]> {
+  const { data, error, response } = await apiClient.GET("/v1/reports/purchase-orders");
+  const payload = assertData(data, error, response.status);
+  return (payload as unknown as { data: PurchaseOrderReportRow[] }).data;
+}
+
+export async function listAuditLogs(filters: {
+  actorId?: string;
+  action?: string;
+  auditableType?: string;
+}): Promise<{ data: AuditLogRow[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/audit-logs", {
+    params: {
+      query: {
+        ...(filters.actorId ? { "filter[actor_id]": filters.actorId } : {}),
+        ...(filters.action ? { "filter[action]": filters.action } : {}),
+        ...(filters.auditableType ? { "filter[auditable_type]": filters.auditableType } : {}),
+      },
+    },
+  });
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as AuditLogRow[],
+    meta: payload.meta,
+  };
+}
+
+export async function downloadReport(name: string, query: string): Promise<void> {
+  const token = xsrfToken();
+  const response = await fetch(`${API_BASE}/api/v1/reports/${name}/export${query ? `?${query}` : ""}`, {
+    credentials: "include",
+    headers: {
+      Accept: "text/csv",
+      "X-Requested-With": "XMLHttpRequest",
+      ...(token ? { "X-XSRF-TOKEN": token } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Could not download the report (${response.status}).`);
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${name}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}

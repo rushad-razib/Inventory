@@ -73,6 +73,8 @@ export function AppShell() {
       label: "Cash book",
       visible: can(user, "reports.view") || can(user, "purchasing.settle"),
     },
+    { to: "/reports", label: "Reports", visible: can(user, "reports.view") },
+    { to: "/audit", label: "Audit", visible: can(user, "audit.view") },
     { to: "/pos", label: "Till", visible: can(user, "sales.create") },
     {
       to: "/sales",

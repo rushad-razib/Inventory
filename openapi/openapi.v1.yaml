@@ -225,6 +225,59 @@ paths:
                   - errors
         401:
           $ref: '#/components/responses/AuthenticationException'
+  /v1/audit-logs:
+    get:
+      operationId: auditLog.index
+      tags:
+        - AuditLog
+      parameters:
+        -
+          name: 'filter[actor_id]'
+          in: query
+          description: 'Actor user id'
+          schema:
+            type: string
+        -
+          name: 'filter[action]'
+          in: query
+          description: 'Audit action'
+          schema:
+            type: string
+        -
+          name: 'filter[auditable_type]'
+          in: query
+          description: 'Model name, such as Sale'
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        403:
+          $ref: '#/components/responses/AuthorizationException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
   /v1/auth/login:
     post:
       operationId: auth.login
@@ -1289,6 +1342,39 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         422:
           $ref: '#/components/responses/ValidationException'
+  /v1/dashboard:
+    get:
+      operationId: dashboard.show
+      tags:
+        - Dashboard
+      parameters:
+        -
+          name: from
+          in: query
+          description: 'Start date YYYY-MM-DD. Defaults to six days ago.'
+          schema:
+            type: string
+        -
+          name: to
+          in: query
+          description: 'End date YYYY-MM-DD. Defaults to today.'
+          schema:
+            type: string
+        -
+          name: group
+          in: query
+          description: 'product or category'
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          $ref: '#/components/responses/AuthenticationException'
   /v1/departments:
     get:
       operationId: department.index
@@ -2441,6 +2527,207 @@ paths:
                   - status
                   - detail
                   - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/reports/stock:
+    get:
+      operationId: report.stock
+      tags:
+        - Report
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/reports/movements:
+    get:
+      operationId: report.movements
+      tags:
+        - Report
+      parameters:
+        -
+          name: 'filter[type]'
+          in: query
+          description: 'Movement type'
+          schema:
+            type: string
+        -
+          name: 'filter[warehouse_id]'
+          in: query
+          description: 'Warehouse id'
+          schema:
+            type: string
+        -
+          name: 'filter[product_id]'
+          in: query
+          description: 'Product id'
+          schema:
+            type: string
+        -
+          name: 'filter[from]'
+          in: query
+          description: 'Occurred at or after'
+          schema:
+            type: string
+        -
+          name: 'filter[to]'
+          in: query
+          description: 'Occurred at or before'
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/reports/sales:
+    get:
+      operationId: report.sales
+      tags:
+        - Report
+      parameters:
+        -
+          name: from
+          in: query
+          description: 'Start date YYYY-MM-DD'
+          schema:
+            type: string
+        -
+          name: to
+          in: query
+          description: 'End date YYYY-MM-DD'
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/reports/demand:
+    get:
+      operationId: report.demand
+      tags:
+        - Report
+      parameters:
+        -
+          name: from
+          in: query
+          description: 'Start date YYYY-MM-DD'
+          schema:
+            type: string
+        -
+          name: to
+          in: query
+          description: 'End date YYYY-MM-DD'
+          schema:
+            type: string
+        -
+          name: group
+          in: query
+          description: 'product or category'
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/reports/roi:
+    get:
+      operationId: report.roi
+      tags:
+        - Report
+      parameters:
+        -
+          name: from
+          in: query
+          description: 'Start date YYYY-MM-DD'
+          schema:
+            type: string
+        -
+          name: to
+          in: query
+          description: 'End date YYYY-MM-DD'
+          schema:
+            type: string
+        -
+          name: group
+          in: query
+          description: 'product or category'
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/reports/supplier-spend:
+    get:
+      operationId: report.supplierSpend
+      tags:
+        - Report
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/reports/purchase-orders:
+    get:
+      operationId: report.purchaseOrders
+      tags:
+        - Report
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/reports/{report}/export':
+    get:
+      operationId: report.export
+      tags:
+        - Report
+      parameters:
+        -
+          name: report
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
         401:
           $ref: '#/components/responses/AuthenticationException'
   /v1/sales:

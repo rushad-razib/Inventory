@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\Api\V1\AdjustmentController;
 use App\Http\Controllers\Api\V1\ApprovalController;
+use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CashEntryController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\CustomerReturnController;
+use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DepartmentController;
 use App\Http\Controllers\Api\V1\GoodsReceiptController;
 use App\Http\Controllers\Api\V1\ImageController;
@@ -14,6 +16,7 @@ use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProductImageController;
 use App\Http\Controllers\Api\V1\PurchaseOrderController;
 use App\Http\Controllers\Api\V1\ReorderAlertController;
+use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\SaleController;
 use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\StockController;
@@ -142,6 +145,17 @@ Route::prefix('v1')->group(function () {
         Route::post('/adjustments', [AdjustmentController::class, 'store']);
         Route::post('/adjustments/{adjustment}/approve', [AdjustmentController::class, 'approve']);
         Route::post('/adjustments/{adjustment}/reject', [AdjustmentController::class, 'reject']);
+
+        Route::get('/dashboard', [DashboardController::class, 'show']);
+        Route::get('/reports/stock', [ReportController::class, 'stock']);
+        Route::get('/reports/movements', [ReportController::class, 'movements']);
+        Route::get('/reports/sales', [ReportController::class, 'sales']);
+        Route::get('/reports/demand', [ReportController::class, 'demand']);
+        Route::get('/reports/roi', [ReportController::class, 'roi']);
+        Route::get('/reports/supplier-spend', [ReportController::class, 'supplierSpend']);
+        Route::get('/reports/purchase-orders', [ReportController::class, 'purchaseOrders']);
+        Route::get('/reports/{report}/export', [ReportController::class, 'export']);
+        Route::get('/audit-logs', [AuditLogController::class, 'index']);
 
         Route::patch('/images/{image}', [ImageController::class, 'update']);
         Route::delete('/images/{image}', [ImageController::class, 'destroy']);
