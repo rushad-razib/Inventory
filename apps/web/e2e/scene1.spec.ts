@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("Nadia drafts a purchase order from the distribution center alerts", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Email").fill("nadia@hartandfield.test");
-  await page.getByLabel("Password").fill("password");
+  await page.getByLabel("Password", { exact: true }).fill("password");
   await page.getByRole("button", { name: "Sign in" }).click();
   await page.getByRole("link", { name: "Reorder alerts" }).click();
 

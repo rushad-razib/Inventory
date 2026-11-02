@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -332,6 +332,8 @@ function UserFields({
   warehouses: { id: string; code: string; name: string }[];
   passwordLabel: string;
 }) {
+  const passwordId = useId();
+
   return (
     <>
       <label className={styles.label}>
@@ -344,11 +346,11 @@ function UserFields({
         <input className={styles.input} type="email" {...register("email")} />
         {errors.email ? <span className={styles.fieldError}>{errors.email.message}</span> : null}
       </label>
-      <label className={styles.label}>
-        {passwordLabel}
-        <PasswordInput className={styles.input} autoComplete="new-password" {...register("password")} />
+      <div className={styles.label}>
+        <label htmlFor={passwordId}>{passwordLabel}</label>
+        <PasswordInput id={passwordId} className={styles.input} autoComplete="new-password" {...register("password")} />
         {errors.password ? <span className={styles.fieldError}>{errors.password.message}</span> : null}
-      </label>
+      </div>
       <label className={styles.label}>
         Role
         <select className={styles.select} {...register("role")}>

@@ -53,11 +53,16 @@ export function LoginPage() {
           {errors.email ? <span className={styles.fieldError}>{errors.email.message}</span> : null}
         </label>
 
-        <label className={styles.label}>
-          Password
-          <PasswordInput className={styles.input} autoComplete="current-password" {...register("password")} />
+        <div className={styles.label}>
+          <label htmlFor="login-password">Password</label>
+          <PasswordInput
+            id="login-password"
+            className={styles.input}
+            autoComplete="current-password"
+            {...register("password")}
+          />
           {errors.password ? <span className={styles.fieldError}>{errors.password.message}</span> : null}
-        </label>
+        </div>
 
         {error ? <p className={styles.error}>{error}</p> : null}
 

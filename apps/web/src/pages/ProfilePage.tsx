@@ -146,9 +146,10 @@ export function ProfilePage() {
               <input className={styles.input} type="email" autoComplete="email" {...register("email")} />
               {errors.email ? <span className={styles.fieldError}>{errors.email.message}</span> : null}
             </label>
-            <label className={styles.label}>
-              Current password
+            <div className={styles.label}>
+              <label htmlFor="profile-current-password">Current password</label>
               <PasswordInput
+                id="profile-current-password"
                 className={styles.input}
                 autoComplete="current-password"
                 {...register("current_password")}
@@ -156,15 +157,21 @@ export function ProfilePage() {
               {errors.current_password ? (
                 <span className={styles.fieldError}>{errors.current_password.message}</span>
               ) : null}
-            </label>
-            <label className={styles.label}>
-              New password
-              <PasswordInput className={styles.input} autoComplete="new-password" {...register("password")} />
-              {errors.password ? <span className={styles.fieldError}>{errors.password.message}</span> : null}
-            </label>
-            <label className={styles.label}>
-              Confirm new password
+            </div>
+            <div className={styles.label}>
+              <label htmlFor="profile-password">New password</label>
               <PasswordInput
+                id="profile-password"
+                className={styles.input}
+                autoComplete="new-password"
+                {...register("password")}
+              />
+              {errors.password ? <span className={styles.fieldError}>{errors.password.message}</span> : null}
+            </div>
+            <div className={styles.label}>
+              <label htmlFor="profile-password-confirmation">Confirm new password</label>
+              <PasswordInput
+                id="profile-password-confirmation"
                 className={styles.input}
                 autoComplete="new-password"
                 {...register("password_confirmation")}
@@ -172,7 +179,7 @@ export function ProfilePage() {
               {errors.password_confirmation ? (
                 <span className={styles.fieldError}>{errors.password_confirmation.message}</span>
               ) : null}
-            </label>
+            </div>
             {formError ? <p className={styles.error}>{formError}</p> : null}
             {saved ? <p className={styles.muted}>Saved.</p> : null}
             <button className={styles.button} type="submit" disabled={isSubmitting || updateMutation.isPending}>
