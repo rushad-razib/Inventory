@@ -11,6 +11,7 @@ import {
 } from "../lib/api";
 import { prettyLabel } from "../lib/labels";
 import { formatStoredRefund, formatTaka } from "../lib/money";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 export function ApprovalsPage() {
@@ -66,7 +67,7 @@ export function ApprovalsPage() {
       </header>
       {approvalsQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {approvalsQuery.isError ? <p className={styles.error}>{(approvalsQuery.error as Error).message}</p> : null}
-      {empty ? <p className={styles.muted}>Nothing is waiting for approval.</p> : null}
+      {empty ? <EmptyState>Nothing is waiting for approval.</EmptyState> : null}
       {orders.length > 0 ? (
         <section className={styles.panel}>
           <h2 className={styles.panelTitle}>Purchase orders</h2>

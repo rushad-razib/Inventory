@@ -80,9 +80,58 @@ jobs:
       - name: Vitest
         run: npm test
 
+  e2e:
+    name: Playwright
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: mbstring, pdo_sqlite, sqlite3
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install API
+        working-directory: apps/api
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Seed SQLite
+        working-directory: apps/api
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          mkdir -p database
+          touch database/database.sqlite
+          php artisan migrate:fresh --seed --force --no-interaction
+      - name: Start API
+        working-directory: apps/api
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8000 > /tmp/meridian-api.log 2>&1 &
+          for _ in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8000/up && exit 0
+            sleep 1
+          done
+          echo "API did not start"
+          cat /tmp/meridian-api.log
+          exit 1
+      - name: Install web
+        working-directory: apps/web
+        run: npm ci
+      - name: Install Playwright
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+      - name: Smoke scene 1 through the draft
+        working-directory: apps/web
+        run: |
+          npm run build
+          npx playwright test
+
   deploy:
     name: Deploy
-    needs: [api, web]
+    needs: [api, web, e2e]
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     concurrency:

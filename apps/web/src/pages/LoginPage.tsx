@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../lib/auth";
+import { PasswordInput } from "../components/PasswordInput";
 import styles from "./LoginPage.module.css";
 
 const schema = z.object({
@@ -24,8 +25,8 @@ export function LoginPage() {
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      email: "admin@meridian.test",
-      password: "password",
+      email: "",
+      password: "",
     },
   });
 
@@ -54,12 +55,7 @@ export function LoginPage() {
 
         <label className={styles.label}>
           Password
-          <input
-            className={styles.input}
-            type="password"
-            autoComplete="current-password"
-            {...register("password")}
-          />
+          <PasswordInput className={styles.input} autoComplete="current-password" {...register("password")} />
           {errors.password ? <span className={styles.fieldError}>{errors.password.message}</span> : null}
         </label>
 

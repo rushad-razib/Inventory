@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +22,7 @@ import { useAuth } from "../lib/auth";
 import { prettyLabel } from "../lib/labels";
 import { formatTaka } from "../lib/money";
 import { can } from "../lib/permissions";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 const schema = z.object({
@@ -56,11 +58,23 @@ export function PurchaseOrdersPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const canCreate = can(user, "purchasing.create");
   const canApprove = can(user, "purchasing.approve");
+  const [searchParams] = useSearchParams();
+  const q = searchParams.get("q") ?? "";
 
-  const ordersQuery = useQuery({ queryKey: ["purchase-orders"], queryFn: listPurchaseOrders });
-  const suppliersQuery = useQuery({ queryKey: ["suppliers"], queryFn: listSuppliers });
+  const ordersQuery = useQuery({
+    queryKey: ["purchase-orders", q],
+    queryFn: () => listPurchaseOrders(q || undefined),
+  });
+
+  useEffect(() => {
+    const first = ordersQuery.data?.data[0];
+    if (q && first) {
+      setSelectedId(first.id);
+    }
+  }, [q, ordersQuery.data]);
+  const suppliersQuery = useQuery({ queryKey: ["suppliers"], queryFn: () => listSuppliers() });
   const warehousesQuery = useQuery({ queryKey: ["warehouses"], queryFn: listWarehouses });
-  const productsQuery = useQuery({ queryKey: ["products"], queryFn: listProducts });
+  const productsQuery = useQuery({ queryKey: ["products"], queryFn: () => listProducts() });
 
   const {
     register,
@@ -177,7 +191,7 @@ export function PurchaseOrdersPage() {
         <div className={styles.tableWrap}>
           {ordersQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
           {ordersQuery.isError ? <p className={styles.error}>{(ordersQuery.error as Error).message}</p> : null}
-          {ordersQuery.data && orders.length === 0 ? <p className={styles.muted}>No purchase orders yet.</p> : null}
+          {ordersQuery.data && orders.length === 0 ? <EmptyState>No purchase orders yet.</EmptyState> : null}
           {orders.length > 0 ? (
             <table className={styles.table}>
               <thead>

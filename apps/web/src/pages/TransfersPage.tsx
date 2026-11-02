@@ -15,6 +15,7 @@ import {
 } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { prettyLabel } from "../lib/labels";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 const schema = z
@@ -50,7 +51,7 @@ export function TransfersPage() {
   const pin = user?.warehouse_id ?? null;
 
   const warehousesQuery = useQuery({ queryKey: ["warehouses"], queryFn: listWarehouses });
-  const productsQuery = useQuery({ queryKey: ["products"], queryFn: listProducts });
+  const productsQuery = useQuery({ queryKey: ["products"], queryFn: () => listProducts() });
   const transfersQuery = useQuery({ queryKey: ["transfers"], queryFn: listTransfers });
 
   const {
@@ -145,9 +146,7 @@ export function TransfersPage() {
           {transfersQuery.isError ? (
             <p className={styles.error}>{(transfersQuery.error as Error).message}</p>
           ) : null}
-          {transfersQuery.data && transfers.length === 0 ? (
-            <p className={styles.muted}>No transfers yet.</p>
-          ) : null}
+          {transfersQuery.data && transfers.length === 0 ? <EmptyState>No transfers yet.</EmptyState> : null}
           {transfers.length > 0 ? (
             <table className={styles.table}>
               <thead>

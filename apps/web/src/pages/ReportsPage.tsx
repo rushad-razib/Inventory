@@ -15,6 +15,7 @@ import {
 } from "../lib/api";
 import { prettyLabel } from "../lib/labels";
 import { formatTaka } from "../lib/money";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 type ReportId = "demand" | "roi" | "sales" | "stock" | "movements" | "supplier-spend" | "purchase-orders";
@@ -63,7 +64,7 @@ export function ReportsPage() {
   });
   const productsQuery = useQuery({
     queryKey: ["products"],
-    queryFn: listProducts,
+    queryFn: () => listProducts(),
     enabled: needsMovement,
   });
   const reportQuery = useQuery({
@@ -176,7 +177,7 @@ export function ReportsPage() {
       {exportError ? <p className={styles.error}>{exportError}</p> : null}
       {reportQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {reportQuery.isError ? <p className={styles.error}>{(reportQuery.error as Error).message}</p> : null}
-      {table && table.rows.length === 0 ? <p className={styles.muted}>No rows for this filter.</p> : null}
+      {table && table.rows.length === 0 ? <EmptyState>No rows for this filter.</EmptyState> : null}
       {table && table.rows.length > 0 ? (
         <div className={styles.tableWrap}>
           <table className={styles.table}>

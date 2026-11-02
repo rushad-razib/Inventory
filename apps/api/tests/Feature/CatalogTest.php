@@ -4,9 +4,10 @@ use App\Models\AuditLog;
 use App\Models\CompanySetting;
 use App\Models\Customer;
 use App\Models\Product;
+use App\Models\PurchaseOrder;
 use App\Models\User;
 use App\Services\ImageService;
-use Database\Seeders\CatalogSeeder;
+use Database\Seeders\DemoSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -15,7 +16,7 @@ use Spatie\Permission\PermissionRegistrar;
 beforeEach(function () {
     app()[PermissionRegistrar::class]->forgetCachedPermissions();
     $this->seed(RolePermissionSeeder::class);
-    $this->seed(CatalogSeeder::class);
+    $this->seed(DemoSeeder::class);
 });
 
 it('allows a cashier to get settings but forbids patching them', function () {
@@ -42,10 +43,10 @@ it('looks up a product by barcode', function () {
     $user->assignRole('Cashier');
     app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-    $product = Product::query()->where('barcode', '8901001001001')->firstOrFail();
+    $product = Product::query()->where('barcode', '8941000000024')->firstOrFail();
 
     $this->actingAs($user)
-        ->getJson('/api/v1/products/lookup?barcode=8901001001001')
+        ->getJson('/api/v1/products/lookup?barcode=8941000000024')
         ->assertOk()
         ->assertJsonPath('data.id', $product->id)
         ->assertJsonPath('data.sku', 'MUG-001');
@@ -154,5 +155,35 @@ it('writes audit rows when settings or product price change', function () {
 
     expect(AuditLog::query()->where('action', 'product.price_changed')->count())->toBe(1);
     expect(CompanySetting::current()->po_approval_threshold)->toBe(25000);
-    expect(Customer::query()->count())->toBe(0);
+    expect(Customer::query()->count())->toBe(2);
+});
+
+it('searches products, suppliers, customers, and purchase orders', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('Admin');
+    app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+    $order = PurchaseOrder::query()->firstOrFail();
+
+    $this->actingAs($admin)
+        ->getJson('/api/v1/products?q=SOAP-001')
+        ->assertOk()
+        ->assertJsonPath('data.0.sku', 'SOAP-001')
+        ->assertJsonCount(1, 'data');
+
+    $this->actingAs($admin)
+        ->getJson('/api/v1/suppliers?q=Hart Mill')
+        ->assertOk()
+        ->assertJsonPath('data.0.code', 'HART-MILL');
+
+    $this->actingAs($admin)
+        ->getJson('/api/v1/customers?q=Rahim')
+        ->assertOk()
+        ->assertJsonPath('data.0.mobile', '+8801711000001');
+
+    $this->actingAs($admin)
+        ->getJson('/api/v1/purchase-orders?q='.$order->number)
+        ->assertOk()
+        ->assertJsonPath('data.0.number', $order->number)
+        ->assertJsonCount(1, 'data');
 });

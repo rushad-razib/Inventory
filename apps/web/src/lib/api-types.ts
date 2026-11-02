@@ -129,7 +129,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        patch: operations["auth.updateMe"];
         trace?: never;
     };
     "/v1/auth/me/image": {
@@ -1509,6 +1509,15 @@ export interface components {
             track_stock?: boolean;
             is_active?: boolean;
         };
+        /** UpdateProfileRequest */
+        UpdateProfileRequest: {
+            name?: string;
+            /** Format: email */
+            email?: string;
+            current_password?: string | null;
+            password?: string | null;
+            password_confirmation?: string | null;
+        };
         /** UpdatePurchaseOrderRequest */
         UpdatePurchaseOrderRequest: {
             /** Format: uuid */
@@ -1926,6 +1935,34 @@ export interface operations {
             401: components["responses"]["AuthenticationException"];
         };
     };
+    "auth.updateMe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
     "auth.meImage": {
         parameters: {
             query?: never;
@@ -2289,7 +2326,10 @@ export interface operations {
     };
     "customer.index": {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Match mobile or name */
+                q?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3053,6 +3093,8 @@ export interface operations {
         parameters: {
             query?: {
                 "filter[sku]"?: string;
+                /** @description Match SKU, name, or barcode */
+                q?: string;
             };
             header?: never;
             path?: never;
@@ -3337,6 +3379,8 @@ export interface operations {
         parameters: {
             query?: {
                 "filter[supplier_id]"?: string;
+                /** @description Match purchase order number */
+                q?: string;
             };
             header?: never;
             path?: never;
@@ -4253,7 +4297,10 @@ export interface operations {
     };
     "supplier.index": {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Match supplier code or name */
+                q?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;

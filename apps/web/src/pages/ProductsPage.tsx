@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +18,7 @@ import {
 import { useAuth } from "../lib/auth";
 import { can } from "../lib/permissions";
 import { formatTaka } from "../lib/money";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 const schema = z.object({
@@ -77,11 +79,20 @@ export function ProductsPage() {
   const [saved, setSaved] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const canManage = can(user, "catalog.manage");
+  const [searchParams] = useSearchParams();
+  const q = searchParams.get("q") ?? "";
 
   const productsQuery = useQuery({
-    queryKey: ["products"],
-    queryFn: listProducts,
+    queryKey: ["products", q],
+    queryFn: () => listProducts(q || undefined),
   });
+
+  useEffect(() => {
+    const first = productsQuery.data?.data[0];
+    if (q && first) {
+      setSelectedId(first.id);
+    }
+  }, [q, productsQuery.data]);
 
   const categoriesQuery = useQuery({
     queryKey: ["categories"],
@@ -90,7 +101,7 @@ export function ProductsPage() {
 
   const suppliersQuery = useQuery({
     queryKey: ["suppliers"],
-    queryFn: listSuppliers,
+    queryFn: () => listSuppliers(),
     enabled: canManage || can(user, "inventory.view") || can(user, "suppliers.manage"),
   });
 
@@ -197,7 +208,10 @@ export function ProductsPage() {
             {productsQuery.isError ? (
               <p className={styles.error}>{(productsQuery.error as Error).message}</p>
             ) : null}
-            {productsQuery.data ? (
+            {productsQuery.data && productsQuery.data.data.length === 0 ? (
+              <EmptyState>No products yet.</EmptyState>
+            ) : null}
+            {productsQuery.data && productsQuery.data.data.length > 0 ? (
               <table className={styles.table}>
                 <thead>
                   <tr>

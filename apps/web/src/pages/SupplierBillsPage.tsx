@@ -5,6 +5,7 @@ import { useAuth } from "../lib/auth";
 import { prettyLabel } from "../lib/labels";
 import { formatTaka } from "../lib/money";
 import { can } from "../lib/permissions";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 function remainder(bill: { amount: number; amount_paid: number; credited_amount: number }): number {
@@ -21,7 +22,7 @@ export function SupplierBillsPage() {
   const [payError, setPayError] = useState<string | null>(null);
   const [paidAmount, setPaidAmount] = useState<number | null>(null);
 
-  const suppliersQuery = useQuery({ queryKey: ["suppliers"], queryFn: listSuppliers });
+  const suppliersQuery = useQuery({ queryKey: ["suppliers"], queryFn: () => listSuppliers() });
   const billsQuery = useQuery({
     queryKey: ["supplier-bills", supplierId, status],
     queryFn: () =>
@@ -109,7 +110,7 @@ export function SupplierBillsPage() {
 
       {billsQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {billsQuery.isError ? <p className={styles.error}>{(billsQuery.error as Error).message}</p> : null}
-      {billsQuery.data && bills.length === 0 ? <p className={styles.muted}>No supplier bills yet.</p> : null}
+      {billsQuery.data && bills.length === 0 ? <EmptyState>No supplier bills yet.</EmptyState> : null}
 
       {bills.length > 0 ? (
         <div className={styles.split}>

@@ -16,17 +16,23 @@ use App\Http\Resources\PurchaseOrderResource;
 use App\Http\Responses\ApiResponse;
 use App\Http\Responses\ProblemResponse;
 use App\Models\PurchaseOrder;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 
 class PurchaseOrderController extends Controller
 {
+    #[QueryParameter('q', description: 'Match purchase order number', type: 'string')]
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', PurchaseOrder::class);
 
         $query = PurchaseOrder::query()->with(PurchaseOrder::apiRelations());
+
+        if ($request->filled('q')) {
+            $query->where('number', 'like', '%'.$request->string('q')->toString().'%');
+        }
 
         if ($request->filled('filter.supplier_id')) {
             $query->where('supplier_id', $request->input('filter.supplier_id'));

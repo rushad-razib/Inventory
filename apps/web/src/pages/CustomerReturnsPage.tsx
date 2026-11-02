@@ -5,6 +5,7 @@ import { useAuth } from "../lib/auth";
 import { prettyLabel } from "../lib/labels";
 import { formatStoredRefund, formatTaka } from "../lib/money";
 import { can } from "../lib/permissions";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 type DraftLine = { saleLineId: string; quantity: number; reason: "resaleable" | "damaged" };
@@ -77,7 +78,7 @@ export function CustomerReturnsPage() {
           <p className={styles.subtitle}>Request selected units. A manager approves. The till then pays the stored cash.</p>
         </div>
       </header>
-      {returnsQuery.data && returns.length === 0 ? <p className={styles.muted}>No customer returns yet.</p> : null}
+      {returnsQuery.data && returns.length === 0 ? <EmptyState>No customer returns yet.</EmptyState> : null}
       {returns.length > 0 ? (
         <div className={styles.tableWrap}>
           <table className={styles.table}>

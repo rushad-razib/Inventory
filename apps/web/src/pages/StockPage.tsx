@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { listStockBalances, listWarehouses } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 export function StockPage() {
@@ -52,7 +53,7 @@ export function StockPage() {
       {balancesQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {balancesQuery.isError ? <p className={styles.error}>{(balancesQuery.error as Error).message}</p> : null}
       {balancesQuery.data && balancesQuery.data.data.length === 0 ? (
-        <p className={styles.muted}>No stock in this warehouse.</p>
+        <EmptyState>No stock in this warehouse.</EmptyState>
       ) : null}
       {balancesQuery.data && balancesQuery.data.data.length > 0 ? (
         <div className={styles.tableWrap}>

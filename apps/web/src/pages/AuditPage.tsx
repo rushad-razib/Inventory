@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { listAuditLogs } from "../lib/api";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 export function AuditPage() {
@@ -46,7 +47,7 @@ export function AuditPage() {
 
       {logsQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {logsQuery.isError ? <p className={styles.error}>{(logsQuery.error as Error).message}</p> : null}
-      {logsQuery.data && rows.length === 0 ? <p className={styles.muted}>No audit rows for this filter.</p> : null}
+      {logsQuery.data && rows.length === 0 ? <EmptyState>No audit rows for this filter.</EmptyState> : null}
 
       <div className={styles.split}>
         {rows.length > 0 ? (

@@ -350,6 +350,34 @@ paths:
                   - meta
         401:
           $ref: '#/components/responses/AuthenticationException'
+    patch:
+      operationId: auth.updateMe
+      tags:
+        - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
   /v1/auth/me/image:
     get:
       operationId: auth.meImage
@@ -800,6 +828,13 @@ paths:
       operationId: customer.index
       tags:
         - Customer
+      parameters:
+        -
+          name: q
+          in: query
+          description: 'Match mobile or name'
+          schema:
+            type: string
       responses:
         200:
           description: ''
@@ -1756,6 +1791,12 @@ paths:
           in: query
           schema:
             type: string
+        -
+          name: q
+          in: query
+          description: 'Match SKU, name, or barcode'
+          schema:
+            type: string
       responses:
         200:
           description: ''
@@ -2128,6 +2169,12 @@ paths:
         -
           name: 'filter[supplier_id]'
           in: query
+          schema:
+            type: string
+        -
+          name: q
+          in: query
+          description: 'Match purchase order number'
           schema:
             type: string
       responses:
@@ -3253,6 +3300,13 @@ paths:
       operationId: supplier.index
       tags:
         - Supplier
+      parameters:
+        -
+          name: q
+          in: query
+          description: 'Match supplier code or name'
+          schema:
+            type: string
       responses:
         200:
           description: ''
@@ -5407,6 +5461,31 @@ components:
         is_active:
           type: boolean
       title: UpdateProductRequest
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        current_password:
+          type:
+            - string
+            - 'null'
+        password:
+          type:
+            - string
+            - 'null'
+          minLength: 8
+        password_confirmation:
+          type:
+            - string
+            - 'null'
+          minLength: 8
+      title: UpdateProfileRequest
     UpdatePurchaseOrderRequest:
       type: object
       properties:

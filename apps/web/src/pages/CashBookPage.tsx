@@ -3,6 +3,7 @@ import { useState } from "react";
 import { getCashBalances, listCashEntries } from "../lib/api";
 import { prettyLabel } from "../lib/labels";
 import { formatTaka } from "../lib/money";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 type LocationFilter = "" | "till" | "bank";
@@ -62,7 +63,7 @@ export function CashBookPage() {
 
       {entriesQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {entriesQuery.isError ? <p className={styles.error}>{(entriesQuery.error as Error).message}</p> : null}
-      {entriesQuery.data && entries.length === 0 ? <p className={styles.muted}>No cash entries yet.</p> : null}
+      {entriesQuery.data && entries.length === 0 ? <EmptyState>No cash entries yet.</EmptyState> : null}
       {entries.length > 0 ? (
         <div className={styles.tableWrap}>
           <table className={styles.table}>

@@ -12,6 +12,7 @@ import { CustomersPage } from "./pages/CustomersPage";
 import { UsersPage } from "./pages/UsersPage";
 import { DepartmentsPage } from "./pages/DepartmentsPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { ProfilePage } from "./pages/ProfilePage";
 import { StockPage } from "./pages/StockPage";
 import { LotsPage } from "./pages/LotsPage";
 import { MovementsPage } from "./pages/MovementsPage";
@@ -108,6 +109,7 @@ export default function App() {
               <Route path="users" element={<UsersPage />} />
               <Route path="departments" element={<DepartmentsPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="profile" element={<ProfilePage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

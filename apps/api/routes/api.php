@@ -37,6 +37,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('web');
         Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::patch('/auth/me', [AuthController::class, 'updateMe']);
         Route::get('/auth/me/image', [AuthController::class, 'meImage']);
         Route::post('/auth/tokens', [AuthController::class, 'createToken']);
         Route::delete('/auth/tokens/{id}', [AuthController::class, 'revokeToken']);

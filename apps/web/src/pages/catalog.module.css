@@ -299,6 +299,57 @@
   vertical-align: -1px;
 }
 
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  padding: 1.75rem 1rem;
+  color: var(--color-ink-muted);
+}
+
+.emptyMark {
+  width: 3rem;
+  height: 3rem;
+}
+
+.emptyCopy {
+  margin: 0;
+  text-align: center;
+}
+
+.till {
+  display: grid;
+  grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.barcodeInput {
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+}
+
+.tillTotals {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.75rem 0;
+  text-align: right;
+}
+
+.tillTotals p {
+  margin: 0;
+}
+
+.changeDue {
+  font-size: 1.35rem;
+}
+
+@media (max-width: 800px) {
+  .till {
+    grid-template-columns: 1fr;
+  }
+}
+
 .auditJson {
   margin: 0 0 0.75rem;
   padding: 0.6rem;

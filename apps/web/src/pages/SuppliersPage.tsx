@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +16,7 @@ import {
 import { useAuth } from "../lib/auth";
 import { can } from "../lib/permissions";
 import { formatTaka } from "../lib/money";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 const supplierSchema = z.object({
@@ -48,15 +50,24 @@ export function SuppliersPage() {
   const [saved, setSaved] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
   const canManage = can(user, "suppliers.manage");
+  const [searchParams] = useSearchParams();
+  const q = searchParams.get("q") ?? "";
 
   const suppliersQuery = useQuery({
-    queryKey: ["suppliers"],
-    queryFn: listSuppliers,
+    queryKey: ["suppliers", q],
+    queryFn: () => listSuppliers(q || undefined),
   });
+
+  useEffect(() => {
+    const first = suppliersQuery.data?.data[0];
+    if (q && first) {
+      setSelectedId(first.id);
+    }
+  }, [q, suppliersQuery.data]);
 
   const productsQuery = useQuery({
     queryKey: ["products"],
-    queryFn: listProducts,
+    queryFn: () => listProducts(),
     enabled: Boolean(selectedId),
   });
 
@@ -196,7 +207,10 @@ export function SuppliersPage() {
             {suppliersQuery.isError ? (
               <p className={styles.error}>{(suppliersQuery.error as Error).message}</p>
             ) : null}
-            {suppliersQuery.data ? (
+            {suppliersQuery.data && suppliersQuery.data.data.length === 0 ? (
+              <EmptyState>No suppliers yet.</EmptyState>
+            ) : null}
+            {suppliersQuery.data && suppliersQuery.data.data.length > 0 ? (
               <table className={styles.table}>
                 <thead>
                   <tr>

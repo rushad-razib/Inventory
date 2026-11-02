@@ -17,6 +17,7 @@ import { useAuth } from "../lib/auth";
 import { prettyLabel } from "../lib/labels";
 import { formatTaka } from "../lib/money";
 import { can } from "../lib/permissions";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 const schema = z.object({
@@ -151,7 +152,7 @@ export function SupplierReturnsPage() {
         <div>
           {returnsQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
           {returnsQuery.isError ? <p className={styles.error}>{(returnsQuery.error as Error).message}</p> : null}
-          {returnsQuery.data && rows.length === 0 ? <p className={styles.muted}>No supplier returns yet.</p> : null}
+          {returnsQuery.data && rows.length === 0 ? <EmptyState>No supplier returns yet.</EmptyState> : null}
           {rows.length > 0 ? (
             <div className={styles.tableWrap}>
               <table className={styles.table}>

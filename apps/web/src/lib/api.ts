@@ -252,8 +252,22 @@ export async function fetchMe(): Promise<AuthUser> {
   return toAuthUser(payload.data as unknown as AuthUser);
 }
 
-export async function listProducts(): Promise<{ data: Product[]; meta: PaginatedMeta }> {
-  const { data, error, response } = await apiClient.GET("/v1/products");
+export async function updateProfile(body: {
+  name?: string;
+  email?: string;
+  current_password?: string | null;
+  password?: string | null;
+  password_confirmation?: string | null;
+}): Promise<AuthUser> {
+  const { data, error, response } = await apiClient.PATCH("/v1/auth/me", { body });
+  const payload = assertData(data, error, response.status);
+  return toAuthUser(payload.data as unknown as AuthUser);
+}
+
+export async function listProducts(q?: string): Promise<{ data: Product[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/products", {
+    params: { query: q ? { q } : undefined },
+  });
   const payload = assertData(data, error, response.status);
   return {
     data: payload.data as unknown as Product[],
@@ -380,8 +394,10 @@ export async function updateWarehouse(id: string, body: Partial<WarehouseInput>)
   return payload.data as unknown as Warehouse;
 }
 
-export async function listSuppliers(): Promise<{ data: Supplier[]; meta: PaginatedMeta }> {
-  const { data, error, response } = await apiClient.GET("/v1/suppliers");
+export async function listSuppliers(q?: string): Promise<{ data: Supplier[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/suppliers", {
+    params: { query: q ? { q } : undefined },
+  });
   const payload = assertData(data, error, response.status);
   return {
     data: payload.data as unknown as Supplier[],
@@ -443,8 +459,10 @@ export async function createSupplierProduct(
   return payload.data as unknown as SupplierProduct;
 }
 
-export async function listCustomers(): Promise<{ data: Customer[]; meta: PaginatedMeta }> {
-  const { data, error, response } = await apiClient.GET("/v1/customers");
+export async function listCustomers(q?: string): Promise<{ data: Customer[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/customers", {
+    params: { query: q ? { q } : undefined },
+  });
   const payload = assertData(data, error, response.status);
   return {
     data: payload.data as unknown as Customer[],
@@ -960,8 +978,10 @@ export type Approvals = {
   customer_returns: CustomerReturn[];
 };
 
-export async function listPurchaseOrders(): Promise<{ data: PurchaseOrder[]; meta: PaginatedMeta }> {
-  const { data, error, response } = await apiClient.GET("/v1/purchase-orders");
+export async function listPurchaseOrders(q?: string): Promise<{ data: PurchaseOrder[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/purchase-orders", {
+    params: { query: q ? { q } : undefined },
+  });
   const payload = assertData(data, error, response.status);
   return {
     data: payload.data as unknown as PurchaseOrder[],

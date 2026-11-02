@@ -13,6 +13,7 @@ import {
   uploadUserImage,
   type CatalogUser,
 } from "../lib/api";
+import { PasswordInput } from "../components/PasswordInput";
 import styles from "./catalog.module.css";
 
 const ROLES = ["Admin", "Manager", "Procurement", "Warehouse", "Cashier"] as const;
@@ -345,7 +346,7 @@ function UserFields({
       </label>
       <label className={styles.label}>
         {passwordLabel}
-        <input className={styles.input} type="password" {...register("password")} />
+        <PasswordInput className={styles.input} autoComplete="new-password" {...register("password")} />
         {errors.password ? <span className={styles.fieldError}>{errors.password.message}</span> : null}
       </label>
       <label className={styles.label}>

@@ -33,7 +33,7 @@ export function PosPage() {
   const [error, setError] = useState<string | null>(null);
 
   const warehousesQuery = useQuery({ queryKey: ["warehouses"], queryFn: listWarehouses, enabled: pin === null });
-  const productsQuery = useQuery({ queryKey: ["products"], queryFn: listProducts });
+  const productsQuery = useQuery({ queryKey: ["products"], queryFn: () => listProducts() });
   const products = (productsQuery.data?.data ?? []).filter((product) => product.track_stock && product.is_active);
   const shelf = cartShelfTotal(cart.map((line) => ({ unitPrice: line.product.sell_price, quantity: line.quantity })));
   const pointCap = Math.min(customer?.points_balance ?? 0, shelf);
@@ -137,6 +137,8 @@ export function PosPage() {
         </div>
       </header>
 
+      <div className={styles.till}>
+      <div className={styles.stack}>
       <section className={styles.panel}>
         <form
           className={styles.form}
@@ -164,7 +166,7 @@ export function PosPage() {
           )}
           <label className={styles.label}>
             Barcode
-            <input className={styles.input} value={barcode} onChange={(event) => setBarcode(event.target.value)} autoFocus />
+            <input className={`${styles.input} ${styles.barcodeInput}`} value={barcode} onChange={(event) => setBarcode(event.target.value)} autoFocus />
           </label>
           <label className={styles.label}>
             Or choose a product
@@ -222,6 +224,7 @@ export function PosPage() {
           </button>
         ) : null}
       </section>
+      </div>
 
       <section className={styles.panel}>
         <h2 className={styles.panelTitle}>Cart</h2>
@@ -245,7 +248,7 @@ export function PosPage() {
             />
           </div>
         ))}
-        <p className="mono">Shelf {formatTaka(shelf)}</p>
+        <p className={`mono ${styles.tillTotals}`}>Shelf {formatTaka(shelf)}</p>
         <div className={styles.toolbar}>
           <label className={styles.label}>
             Points
@@ -280,8 +283,10 @@ export function PosPage() {
             />
           </label>
         </div>
-        <p className="mono">Cash due {formatTaka(cashDue)}</p>
-        <p className="mono">Change due {formatTaka(changeDue(cashReceived, cashDue))}</p>
+        <div className={`mono ${styles.tillTotals}`}>
+          <p>Cash due {formatTaka(cashDue)}</p>
+          <p className={styles.changeDue}>Change due {formatTaka(changeDue(cashReceived, cashDue))}</p>
+        </div>
         {error ? <p className={styles.error}>{error}</p> : null}
         <button
           className={styles.button}
@@ -292,6 +297,7 @@ export function PosPage() {
           {saleMutation.isPending ? "Posting…" : "Post sale"}
         </button>
       </section>
+      </div>
 
       {posted ? (
         <section className={styles.panel}>

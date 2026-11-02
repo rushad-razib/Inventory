@@ -5,6 +5,7 @@ import { useAuth } from "../lib/auth";
 import { prettyLabel } from "../lib/labels";
 import { formatTaka } from "../lib/money";
 import { can } from "../lib/permissions";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 export function SalesPage() {
@@ -47,7 +48,7 @@ export function SalesPage() {
       </header>
       {salesQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {salesQuery.isError ? <p className={styles.error}>{(salesQuery.error as Error).message}</p> : null}
-      {salesQuery.data && sales.length === 0 ? <p className={styles.muted}>No sales yet.</p> : null}
+      {salesQuery.data && sales.length === 0 ? <EmptyState>No sales yet.</EmptyState> : null}
       {sales.length > 0 ? (
         <div className={styles.tableWrap}>
           <table className={styles.table}>

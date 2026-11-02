@@ -12,12 +12,14 @@ use App\Http\Responses\ProblemResponse;
 use App\Models\Customer;
 use App\Models\CustomerPointEntry;
 use App\Support\BdMobile;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 
 class CustomerController extends Controller
 {
+    #[QueryParameter('q', description: 'Match mobile or name', type: 'string')]
     public function index(Request $request): JsonResponse
     {
         if (! $request->user()->can('customers.manage')) {

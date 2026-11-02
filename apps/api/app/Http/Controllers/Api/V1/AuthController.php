@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\CreateTokenRequest;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\UpdateProfileRequest;
 use App\Http\Resources\ImageResource;
 use App\Http\Resources\PersonalAccessTokenResource;
 use App\Http\Resources\UserResource;
@@ -47,6 +48,23 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         return ApiResponse::data(new UserResource($request->user()->loadMissing('roles', 'permissions')));
+    }
+
+    public function updateMe(UpdateProfileRequest $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        $attributes = $request->safe()->only(['name', 'email']);
+
+        if ($request->filled('password')) {
+            $attributes['password'] = $request->string('password')->toString();
+        }
+
+        $user->fill($attributes);
+        $user->save();
+
+        return ApiResponse::data(new UserResource($user->loadMissing('roles', 'permissions')));
     }
 
     public function meImage(Request $request): JsonResponse

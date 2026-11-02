@@ -3,6 +3,7 @@ import { useState } from "react";
 import { listStockMovements, listWarehouses } from "../lib/api";
 import { prettyLabel } from "../lib/labels";
 import { useAuth } from "../lib/auth";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 export function MovementsPage() {
@@ -51,7 +52,7 @@ export function MovementsPage() {
         <p className={styles.error}>{(movementsQuery.error as Error).message}</p>
       ) : null}
       {movementsQuery.data && movementsQuery.data.data.length === 0 ? (
-        <p className={styles.muted}>No movements yet.</p>
+        <EmptyState>No movements yet.</EmptyState>
       ) : null}
       {movementsQuery.data && movementsQuery.data.data.length > 0 ? (
         <div className={styles.tableWrap}>

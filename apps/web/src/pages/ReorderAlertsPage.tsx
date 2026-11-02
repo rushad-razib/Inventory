@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { createPurchaseOrdersFromAlerts, listReorderAlerts } from "../lib/api";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 function alertKey(warehouseId: string, productId: string): string {
@@ -44,7 +45,7 @@ export function ReorderAlertsPage() {
       </header>
       {alertsQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {alertsQuery.isError ? <p className={styles.error}>{(alertsQuery.error as Error).message}</p> : null}
-      {alertsQuery.data && alerts.length === 0 ? <p className={styles.muted}>No products need reordering.</p> : null}
+      {alertsQuery.data && alerts.length === 0 ? <EmptyState>No products need reordering.</EmptyState> : null}
       {alerts.length > 0 ? (
         <div className={styles.tableWrap}>
           <table className={styles.table}>

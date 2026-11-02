@@ -10,22 +10,30 @@ use App\Http\Requests\Suppliers\UpdateSupplierRequest;
 use App\Http\Resources\SupplierResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Supplier;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SupplierController extends Controller
 {
+    #[QueryParameter('q', description: 'Match supplier code or name', type: 'string')]
     public function index(Request $request): JsonResponse
     {
         if (! $request->user()->can('inventory.view') && ! $request->user()->can('suppliers.manage')) {
             return $this->forbidden('You do not have permission to list suppliers.');
         }
 
-        $paginator = Supplier::query()
-            ->orderBy('code')
-            ->paginate($this->perPage($request));
+        $query = Supplier::query()->orderBy('code');
 
-        return ApiResponse::paginated($paginator, SupplierResource::class);
+        if ($request->filled('q')) {
+            $q = $request->string('q')->toString();
+            $query->where(function ($builder) use ($q): void {
+                $builder->where('code', 'like', "%{$q}%")
+                    ->orWhere('name', 'like', "%{$q}%");
+            });
+        }
+
+        return ApiResponse::paginated($query->paginate($this->perPage($request)), SupplierResource::class);
     }
 
     public function show(Request $request, Supplier $supplier): JsonResponse

@@ -9,11 +9,13 @@ use App\Http\Resources\ProductResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Product;
 use App\Services\AuditLogger;
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    #[QueryParameter('q', description: 'Match SKU, name, or barcode', type: 'string')]
     public function index(Request $request): JsonResponse
     {
         if (! $request->user()->can('inventory.view') && ! $request->user()->can('catalog.manage')) {

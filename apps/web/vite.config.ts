@@ -17,8 +17,22 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    port: 4173,
+    proxy: {
+      "/api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+      "/sanctum": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+    },
+  },
   test: {
     environment: "jsdom",
     globals: true,
+    exclude: ["e2e/**", "node_modules/**", "dist/**"],
   },
 });

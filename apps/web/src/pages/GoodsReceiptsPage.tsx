@@ -17,6 +17,7 @@ import { useAuth } from "../lib/auth";
 import { prettyLabel } from "../lib/labels";
 import { formatTaka } from "../lib/money";
 import { can } from "../lib/permissions";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 const consignSchema = z.object({
@@ -46,10 +47,10 @@ export function GoodsReceiptsPage() {
   const canReceive = can(user, "purchasing.receive");
 
   const receiptsQuery = useQuery({ queryKey: ["goods-receipts"], queryFn: listGoodsReceipts });
-  const ordersQuery = useQuery({ queryKey: ["purchase-orders"], queryFn: listPurchaseOrders, enabled: canReceive });
-  const suppliersQuery = useQuery({ queryKey: ["suppliers"], queryFn: listSuppliers, enabled: canReceive });
+  const ordersQuery = useQuery({ queryKey: ["purchase-orders"], queryFn: () => listPurchaseOrders(), enabled: canReceive });
+  const suppliersQuery = useQuery({ queryKey: ["suppliers"], queryFn: () => listSuppliers(), enabled: canReceive });
   const warehousesQuery = useQuery({ queryKey: ["warehouses"], queryFn: listWarehouses, enabled: canReceive });
-  const productsQuery = useQuery({ queryKey: ["products"], queryFn: listProducts, enabled: canReceive });
+  const productsQuery = useQuery({ queryKey: ["products"], queryFn: () => listProducts(), enabled: canReceive });
 
   const receipts = receiptsQuery.data?.data ?? [];
   const selected = receipts.find((receipt) => receipt.id === selectedId) ?? null;
@@ -159,7 +160,7 @@ export function GoodsReceiptsPage() {
         <div className={styles.tableWrap}>
           {receiptsQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
           {receiptsQuery.isError ? <p className={styles.error}>{(receiptsQuery.error as Error).message}</p> : null}
-          {receiptsQuery.data && receipts.length === 0 ? <p className={styles.muted}>No receipts yet.</p> : null}
+          {receiptsQuery.data && receipts.length === 0 ? <EmptyState>No receipts yet.</EmptyState> : null}
           {receipts.length > 0 ? (
             <table className={styles.table}>
               <thead>

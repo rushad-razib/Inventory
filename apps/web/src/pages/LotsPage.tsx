@@ -4,6 +4,7 @@ import { listStockLots, listWarehouses } from "../lib/api";
 import { prettyLabel } from "../lib/labels";
 import { formatTaka } from "../lib/money";
 import { useAuth } from "../lib/auth";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 export function LotsPage() {
@@ -49,7 +50,7 @@ export function LotsPage() {
 
       {lotsQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {lotsQuery.isError ? <p className={styles.error}>{(lotsQuery.error as Error).message}</p> : null}
-      {lotsQuery.data && lotsQuery.data.data.length === 0 ? <p className={styles.muted}>No lots yet.</p> : null}
+      {lotsQuery.data && lotsQuery.data.data.length === 0 ? <EmptyState>No lots yet.</EmptyState> : null}
       {lotsQuery.data && lotsQuery.data.data.length > 0 ? (
         <div className={styles.tableWrap}>
           <table className={styles.table}>

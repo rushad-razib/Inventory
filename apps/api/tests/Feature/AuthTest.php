@@ -1,8 +1,9 @@
 <?php
 
 use App\Models\User;
-use Database\Seeders\CatalogSeeder;
+use Database\Seeders\DemoSeeder;
 use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
@@ -58,6 +59,89 @@ it('returns the authenticated user from me', function () {
         ->assertJsonPath('data.permissions.0', 'users.manage');
 });
 
+it('updates the signed-in user name without changing their role', function () {
+    $user = User::factory()->create(['name' => 'Old Name']);
+    $user->assignRole('Cashier');
+
+    $response = $this->actingAs($user)->patchJson('/api/v1/auth/me', [
+        'name' => 'New Name',
+        'role' => 'Admin',
+    ]);
+
+    $response->assertOk()
+        ->assertJsonPath('data.name', 'New Name')
+        ->assertJsonPath('data.email', $user->email);
+
+    $fresh = $user->fresh();
+    expect($fresh->name)->toBe('New Name')
+        ->and($fresh->hasRole('Cashier'))->toBeTrue()
+        ->and($fresh->hasRole('Admin'))->toBeFalse();
+});
+
+it('updates email and password when the current password matches', function () {
+    $user = User::factory()->create([
+        'email' => 'cashier@example.test',
+        'password' => 'password',
+    ]);
+    $user->assignRole('Cashier');
+
+    $response = $this->actingAs($user)->patchJson('/api/v1/auth/me', [
+        'email' => 'cashier.new@example.test',
+        'current_password' => 'password',
+        'password' => 'new-password',
+        'password_confirmation' => 'new-password',
+    ]);
+
+    $response->assertOk()
+        ->assertJsonPath('data.email', 'cashier.new@example.test');
+
+    $fresh = $user->fresh();
+    expect($fresh->email)->toBe('cashier.new@example.test')
+        ->and(Hash::check('new-password', $fresh->password))->toBeTrue();
+});
+
+it('rejects a profile update with the wrong current password', function () {
+    $user = User::factory()->create([
+        'email' => 'cashier@example.test',
+        'password' => 'password',
+    ]);
+
+    $response = $this->actingAs($user)->patchJson('/api/v1/auth/me', [
+        'email' => 'cashier.new@example.test',
+        'current_password' => 'wrong-password',
+    ]);
+
+    $response->assertStatus(422)
+        ->assertHeader('Content-Type', 'application/problem+json')
+        ->assertJsonPath('type', '/problems/validation-failed');
+
+    expect($user->fresh()->email)->toBe('cashier@example.test');
+});
+
+it('rejects a profile email that is already taken', function () {
+    User::factory()->create(['email' => 'taken@example.test']);
+    $user = User::factory()->create([
+        'email' => 'cashier@example.test',
+        'password' => 'password',
+    ]);
+
+    $response = $this->actingAs($user)->patchJson('/api/v1/auth/me', [
+        'email' => 'taken@example.test',
+        'current_password' => 'password',
+    ]);
+
+    $response->assertStatus(422)
+        ->assertJsonPath('type', '/problems/validation-failed');
+});
+
+it('returns 401 when updating the profile logged out', function () {
+    $this->patchJson('/api/v1/auth/me', [
+        'name' => 'Nobody',
+    ])->assertUnauthorized()
+        ->assertHeader('Content-Type', 'application/problem+json')
+        ->assertJsonPath('type', '/problems/unauthenticated');
+});
+
 it('returns 401 for me when logged out', function () {
     $response = $this->getJson('/api/v1/auth/me');
 
@@ -84,7 +168,7 @@ it('logs out the session', function () {
 });
 
 it('allows a cashier to read settings without settings.manage', function () {
-    $this->seed(CatalogSeeder::class);
+    $this->seed(DemoSeeder::class);
 
     $user = User::factory()->create();
     $user->assignRole('Cashier');
@@ -97,7 +181,7 @@ it('allows a cashier to read settings without settings.manage', function () {
 });
 
 it('forbids a cashier from patching settings without settings.manage', function () {
-    $this->seed(CatalogSeeder::class);
+    $this->seed(DemoSeeder::class);
 
     $user = User::factory()->create();
     $user->assignRole('Cashier');
@@ -113,7 +197,7 @@ it('forbids a cashier from patching settings without settings.manage', function 
 });
 
 it('allows settings for an admin', function () {
-    $this->seed(CatalogSeeder::class);
+    $this->seed(DemoSeeder::class);
 
     $user = User::factory()->create();
     $user->assignRole('Admin');

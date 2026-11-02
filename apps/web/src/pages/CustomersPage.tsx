@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,6 +7,7 @@ import { useState } from "react";
 import { createCustomer, listCustomers, lookupCustomer, type Customer } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { can } from "../lib/permissions";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 const createSchema = z.object({
@@ -28,10 +30,12 @@ export function CustomersPage() {
   const [lookupResult, setLookupResult] = useState<Customer | null | undefined>(undefined);
   const canManage = can(user, "customers.manage");
   const canLookup = can(user, "sales.create");
+  const [searchParams] = useSearchParams();
+  const q = searchParams.get("q") ?? "";
 
   const customersQuery = useQuery({
-    queryKey: ["customers"],
-    queryFn: listCustomers,
+    queryKey: ["customers", q],
+    queryFn: () => listCustomers(q || undefined),
     enabled: canManage,
   });
 
@@ -120,7 +124,10 @@ export function CustomersPage() {
               {customersQuery.isError ? (
                 <p className={styles.error}>{(customersQuery.error as Error).message}</p>
               ) : null}
-              {customersQuery.data ? (
+              {customersQuery.data && customersQuery.data.data.length === 0 ? (
+                <EmptyState>No customers yet.</EmptyState>
+              ) : null}
+              {customersQuery.data && customersQuery.data.data.length > 0 ? (
                 <table className={styles.table}>
                   <thead>
                     <tr>

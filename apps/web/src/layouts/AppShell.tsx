@@ -1,6 +1,8 @@
+import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { can } from "../lib/permissions";
+import { CommandPalette } from "./CommandPalette";
 import styles from "./AppShell.module.css";
 
 type NavItem = {
@@ -11,6 +13,34 @@ type NavItem = {
 
 export function AppShell() {
   const { user, logout } = useAuth();
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+      }
+    };
+
+    const onPointer = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onPointer);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onPointer);
+    };
+  }, [menuOpen]);
 
   if (!user) {
     return null;
@@ -103,8 +133,59 @@ export function AppShell() {
 
   return (
     <div className={styles.layout}>
-      <aside className={styles.sidebar}>
-        <div className={styles.brand}>Meridian</div>
+      <header className={styles.header}>
+        <div className={styles.topBar}>
+          <div className={styles.topLeft}>
+            <div className={styles.brand}>Meridian</div>
+            <button className={styles.searchButton} type="button" onClick={() => setPaletteOpen(true)}>
+              Search
+            </button>
+          </div>
+          <div className={styles.profile} ref={profileRef}>
+            <button
+              className={styles.profileButton}
+              type="button"
+              aria-label="Account"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              <svg className={styles.profileIcon} viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                <path
+                  d="M5.5 19.2c1.4-2.8 3.6-4.2 6.5-4.2s5.1 1.4 6.5 4.2"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+            {menuOpen ? (
+              <div className={styles.profileMenu} role="menu">
+                <NavLink
+                  className={styles.profileMenuItem}
+                  role="menuitem"
+                  to="/profile"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Profile
+                </NavLink>
+                <button
+                  className={styles.profileMenuItem}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    void logout();
+                  }}
+                >
+                  Log out
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
         <nav className={styles.nav}>
           {items
             .filter((item) => item.visible)
@@ -119,18 +200,11 @@ export function AppShell() {
               </NavLink>
             ))}
         </nav>
-        <div className={styles.sidebarFooter}>
-          <div className={styles.userMeta} title={user.email}>
-            {user.name}
-          </div>
-          <button className={styles.logout} type="button" onClick={() => void logout()}>
-            Sign out
-          </button>
-        </div>
-      </aside>
+      </header>
       <main className={styles.main}>
         <Outlet />
       </main>
+      <CommandPalette user={user} open={paletteOpen} onOpenChange={setPaletteOpen} />
     </div>
   );
 }

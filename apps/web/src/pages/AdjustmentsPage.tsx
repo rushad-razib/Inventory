@@ -15,6 +15,7 @@ import {
 import { useAuth } from "../lib/auth";
 import { prettyLabel } from "../lib/labels";
 import { can } from "../lib/permissions";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 const schema = z
@@ -42,7 +43,7 @@ export function AdjustmentsPage() {
   const canApprove = can(user, "purchasing.approve");
 
   const warehousesQuery = useQuery({ queryKey: ["warehouses"], queryFn: listWarehouses });
-  const productsQuery = useQuery({ queryKey: ["products"], queryFn: listProducts });
+  const productsQuery = useQuery({ queryKey: ["products"], queryFn: () => listProducts() });
   const adjustmentsQuery = useQuery({
     queryKey: ["adjustments", pin],
     queryFn: () => listAdjustments(pin ?? undefined),
@@ -130,9 +131,7 @@ export function AdjustmentsPage() {
           {adjustmentsQuery.isError ? (
             <p className={styles.error}>{(adjustmentsQuery.error as Error).message}</p>
           ) : null}
-          {adjustmentsQuery.data && adjustments.length === 0 ? (
-            <p className={styles.muted}>No adjustments yet.</p>
-          ) : null}
+          {adjustmentsQuery.data && adjustments.length === 0 ? <EmptyState>No adjustments yet.</EmptyState> : null}
           {adjustments.length > 0 ? (
             <table className={styles.table}>
               <thead>
