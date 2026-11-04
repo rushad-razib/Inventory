@@ -57,7 +57,7 @@ it('returns the authenticated user from me', function () {
 
     $response->assertOk()
         ->assertJsonPath('data.id', $user->id)
-        ->assertJsonPath('data.permissions.0', 'users.manage');
+        ->assertJsonPath('data.permissions', fn (array $permissions): bool => in_array('users.manage', $permissions, true));
 });
 
 it('updates the signed-in user name without changing their role', function () {
