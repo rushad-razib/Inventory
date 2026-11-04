@@ -120,12 +120,22 @@ export type CatalogUser = {
 export type CompanySettings = {
   id: string;
   name: string;
+  title: string | null;
+  logo_url: string | null;
+  favicon_url: string | null;
   currency: string;
   po_approval_threshold: number;
   adjustment_approval_threshold: number;
   points_earn_per: number;
   point_redeem_value: number;
   updated_at: string | null;
+};
+
+export type Branding = {
+  name: string;
+  title: string | null;
+  logo_url: string | null;
+  favicon_url: string | null;
 };
 
 export type ImageAsset = {
@@ -566,12 +576,52 @@ export async function fetchSettings(): Promise<CompanySettings> {
 
 export async function updateSettings(body: {
   name?: string;
+  title?: string | null;
   po_approval_threshold?: number;
   adjustment_approval_threshold?: number;
   points_earn_per?: number;
   point_redeem_value?: number;
 }): Promise<CompanySettings> {
   const { data, error, response } = await apiClient.PATCH("/v1/settings", { body });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as CompanySettings;
+}
+
+export async function fetchBranding(): Promise<Branding> {
+  const { data, error, response } = await apiClient.GET("/v1/branding");
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as Branding;
+}
+
+export async function uploadLogo(file: File): Promise<CompanySettings> {
+  return uploadBrandingFile("/v1/settings/logo", file);
+}
+
+export async function uploadFavicon(file: File): Promise<CompanySettings> {
+  return uploadBrandingFile("/v1/settings/favicon", file);
+}
+
+export async function deleteLogo(): Promise<CompanySettings> {
+  const { data, error, response } = await apiClient.DELETE("/v1/settings/logo");
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as CompanySettings;
+}
+
+export async function deleteFavicon(): Promise<CompanySettings> {
+  const { data, error, response } = await apiClient.DELETE("/v1/settings/favicon");
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as CompanySettings;
+}
+
+async function uploadBrandingFile(path: "/v1/settings/logo" | "/v1/settings/favicon", file: File): Promise<CompanySettings> {
+  const { data, error, response } = await apiClient.POST(path, {
+    body: { image: file as unknown as string },
+    bodySerializer(body) {
+      const form = new FormData();
+      form.append("image", body.image as unknown as Blob);
+      return form;
+    },
+  });
   const payload = assertData(data, error, response.status);
   return payload.data as unknown as CompanySettings;
 }
@@ -1216,12 +1266,28 @@ export type CashEntry = {
 };
 
 export type CashBalances = {
-  till: number;
+  cash: number;
   bank: number;
+  drawer: number;
+};
+
+export type DrawerSession = {
+  id: string;
+  cashier_id: string;
+  warehouse_id: string;
+  status: string;
+  opening_amount: number;
+  counted_amount: number | null;
+  expected_amount: number | null;
+  variance: number | null;
+  balance: number;
+  opened_at: string | null;
+  closed_at: string | null;
+  closed_by: string | null;
 };
 
 export async function listCashEntries(
-  location?: "till" | "bank",
+  location?: "cash" | "bank" | "drawer",
 ): Promise<{ data: CashEntry[]; meta: PaginatedMeta }> {
   const { data, error, response } = await apiClient.GET("/v1/cash-entries", {
     params: {
@@ -1239,6 +1305,38 @@ export async function getCashBalances(): Promise<CashBalances> {
   const { data, error, response } = await apiClient.GET("/v1/cash-balances");
   const payload = assertData(data, error, response.status);
   return payload.data as unknown as CashBalances;
+}
+
+export async function createCashMovement(body: {
+  location: "cash" | "bank";
+  direction: "in" | "out";
+  amount: number;
+  note: string;
+}): Promise<CashEntry> {
+  const { data, error, response } = await apiClient.POST("/v1/cash-movements", { body });
+  const payload = assertData(data, error, response.status);
+  return (payload as unknown as { data: CashEntry }).data;
+}
+
+export async function getCurrentDrawer(): Promise<DrawerSession | null> {
+  const { data, error, response } = await apiClient.GET("/v1/drawers/current");
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as DrawerSession | null;
+}
+
+export async function openDrawer(body: { warehouse_id: string; opening_balance: number }): Promise<DrawerSession> {
+  const { data, error, response } = await apiClient.POST("/v1/drawers", { body });
+  const payload = assertData(data, error, response.status);
+  return (payload as unknown as { data: DrawerSession }).data;
+}
+
+export async function closeDrawer(id: string, countedAmount: number): Promise<DrawerSession> {
+  const { data, error, response } = await apiClient.POST("/v1/drawers/{drawer}/close", {
+    params: { path: { drawer: id } },
+    body: { counted_amount: countedAmount },
+  });
+  const payload = assertData(data, error, response.status);
+  return payload.data as unknown as DrawerSession;
 }
 
 export async function lookupProduct(barcode: string): Promise<Product | null> {
@@ -1341,7 +1439,7 @@ export type DashboardTiles = {
   open_purchase_orders: number;
   pending_approvals: number;
   payables_due: number;
-  till: number;
+  cash: number;
   bank: number;
 };
 

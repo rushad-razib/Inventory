@@ -3,8 +3,10 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { useAuth } from "../lib/auth";
+import { BrandMark } from "../components/BrandMark";
 import { PasswordInput } from "../components/PasswordInput";
+import { useAuth } from "../lib/auth";
+import { useBranding } from "../lib/branding";
 import styles from "./LoginPage.module.css";
 
 const schema = z.object({
@@ -16,6 +18,7 @@ type FormValues = z.infer<typeof schema>;
 
 export function LoginPage() {
   const { login } = useAuth();
+  const { data: branding } = useBranding();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const {
@@ -43,9 +46,11 @@ export function LoginPage() {
   return (
     <div className={styles.page}>
       <form className={styles.card} onSubmit={onSubmit}>
-        <p className={styles.brand}>Meridian</p>
+        <BrandMark className={styles.brand} logoClassName={styles.brandLogo} />
         <h1 className={styles.title}>Sign in</h1>
-        <p className={styles.lead}>Inventory and procurement for Hart &amp; Field.</p>
+        <p className={styles.lead}>
+          {branding?.name ? `Inventory and procurement for ${branding.name}.` : "Inventory and procurement."}
+        </p>
 
         <label className={styles.label}>
           Email

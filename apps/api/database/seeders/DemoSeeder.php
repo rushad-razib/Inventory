@@ -53,6 +53,7 @@ class DemoSeeder extends Seeder
             ['currency' => 'BDT'],
             [
                 'name' => 'Hart & Field',
+                'title' => 'Meridian',
                 'po_approval_threshold' => 20000,
                 'adjustment_approval_threshold' => 5000,
                 'points_earn_per' => 100,

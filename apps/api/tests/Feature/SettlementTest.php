@@ -404,7 +404,7 @@ it('reports till and bank as sums of cash entries', function () {
 
     $this->actingAs($manager)->getJson('/api/v1/cash-balances')
         ->assertOk()
-        ->assertJsonPath('data.till', 0)
+        ->assertJsonPath('data.cash', 0)
         ->assertJsonPath('data.bank', -70);
 
     $this->actingAs($buyer)->getJson('/api/v1/cash-entries?'.http_build_query([
@@ -505,6 +505,8 @@ function settlementSale(
     array $tenders,
     string $key,
 ): array {
+    openDrawerFor($cashier, $warehouse->id);
+
     return test()->actingAs($cashier)->postJson('/api/v1/sales', [
         'warehouse_id' => $warehouse->id,
         'customer_id' => $customer?->id,

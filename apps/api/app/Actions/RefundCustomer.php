@@ -6,6 +6,7 @@ use App\Enums\CashDirection;
 use App\Enums\CashEntryType;
 use App\Enums\CashLocation;
 use App\Enums\CustomerReturnStatus;
+use App\Enums\DrawerStatus;
 use App\Enums\LotOwnership;
 use App\Enums\MovementType;
 use App\Enums\PointEntryType;
@@ -15,6 +16,7 @@ use App\Exceptions\LedgerException;
 use App\Http\Resources\CustomerReturnResource;
 use App\Models\CashEntry;
 use App\Models\CustomerReturn;
+use App\Models\DrawerSession;
 use App\Models\SaleLine;
 use App\Models\SaleLineAllocation;
 use App\Models\SupplierReturn;
@@ -94,13 +96,23 @@ final class RefundCustomer
         }
 
         if ($cash > 0) {
+            $drawer = DrawerSession::query()
+                ->where('cashier_id', $actor->id)
+                ->where('status', DrawerStatus::Open)
+                ->first();
+
+            if ($drawer === null) {
+                throw new LedgerException('invalid-state', 'Open a drawer before paying a cash refund.', 422);
+            }
+
             CashEntry::query()->create([
-                'location' => CashLocation::Till,
+                'location' => CashLocation::Drawer,
                 'direction' => CashDirection::Out,
                 'type' => CashEntryType::CustomerRefundOut,
                 'amount' => $cash,
                 'source_type' => $locked->getMorphClass(),
                 'source_id' => $locked->id,
+                'drawer_session_id' => $drawer->id,
                 'actor_id' => $actor->id,
                 'occurred_at' => now(),
             ]);

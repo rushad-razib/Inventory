@@ -2,12 +2,15 @@
 
 namespace App\Actions;
 
+use App\Enums\CashLocation;
+use App\Enums\DrawerStatus;
 use App\Enums\MovementType;
 use App\Enums\PointEntryType;
 use App\Enums\SaleStatus;
 use App\Exceptions\LedgerException;
 use App\Http\Resources\SaleResource;
 use App\Models\CashEntry;
+use App\Models\DrawerSession;
 use App\Models\Sale;
 use App\Models\User;
 use App\Services\AuditLogger;
@@ -71,13 +74,28 @@ final class VoidSale
                 ->get();
 
             foreach ($entries as $entry) {
+                $location = $entry->location;
+                $drawerSessionId = $entry->drawer_session_id;
+
+                if ($location === CashLocation::Drawer) {
+                    $drawer = $drawerSessionId === null
+                        ? null
+                        : DrawerSession::query()->find($drawerSessionId);
+
+                    if ($drawer === null || $drawer->status !== DrawerStatus::Open) {
+                        $location = CashLocation::Cash;
+                        $drawerSessionId = null;
+                    }
+                }
+
                 CashEntry::query()->create([
-                    'location' => $entry->location,
+                    'location' => $location,
                     'direction' => $entry->direction->opposite(),
                     'type' => $entry->type,
                     'amount' => $entry->amount,
                     'source_type' => $locked->getMorphClass(),
                     'source_id' => $locked->id,
+                    'drawer_session_id' => $drawerSessionId,
                     'actor_id' => $actor->id,
                     'occurred_at' => now(),
                 ]);

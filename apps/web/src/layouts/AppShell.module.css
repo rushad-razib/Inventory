@@ -28,11 +28,20 @@
 }
 
 .brand {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   font-size: 0.85rem;
   color: #8fd0cf;
+}
+
+.brandLogo {
+  height: 1.25rem;
+  width: auto;
+  display: block;
 }
 
 .searchButton {
@@ -51,6 +60,61 @@
 
 .profile {
   position: relative;
+}
+
+.topRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navToggle {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 999px;
+  background: transparent;
+  color: #f5f3ef;
+  cursor: pointer;
+  padding: 0;
+}
+
+.navToggle:hover {
+  background: rgb(255 255 255 / 10%);
+}
+
+.chevron {
+  width: 1.15rem;
+  height: 1.15rem;
+  transition: transform 200ms ease;
+}
+
+.chevronClosed {
+  transform: rotate(180deg);
+}
+
+.navWrap {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 200ms ease;
+}
+
+.navWrapClosed {
+  grid-template-rows: 0fr;
+}
+
+.navClip {
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron,
+  .navWrap {
+    transition: none;
+  }
 }
 
 .profileButton {

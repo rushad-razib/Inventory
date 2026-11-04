@@ -15,6 +15,10 @@ export default defineConfig({
         target: "http://localhost:8000",
         changeOrigin: true,
       },
+      "/storage": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
     },
   },
   preview: {
@@ -25,6 +29,10 @@ export default defineConfig({
         changeOrigin: true,
       },
       "/sanctum": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+      "/storage": {
         target: "http://localhost:8000",
         changeOrigin: true,
       },

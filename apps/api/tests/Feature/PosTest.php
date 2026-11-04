@@ -61,6 +61,7 @@ it('stores the soap and mug split and refunds only the mug', function () {
     $mugLot = posLot($warehouse, $mug, null, LotOwnership::Owned, 70, 5, now());
     $customer = posCustomer('+8801711000001', 30);
     $cashier = posUser('Cashier');
+    openDrawerFor($cashier, $warehouse->id);
     $manager = posUser('Manager');
 
     $sale = $this->actingAs($cashier)->withHeaders(['Idempotency-Key' => 'soap-mug'])
@@ -131,7 +132,7 @@ it('stores the soap and mug split and refunds only the mug', function () {
     expect(StockLot::query()->find($mugLot->id)->qty_on_hand)->toBe(5)
         ->and(StockLot::query()->find($soapLot->id)->qty_on_hand)->toBe(4)
         ->and($customer->fresh()->points_balance)->toBe(19)
-        ->and(CashEntry::query()->where('type', CashEntryType::CustomerRefundOut)->where('location', CashLocation::Till)->value('amount'))->toBe(132)
+        ->and(CashEntry::query()->where('type', CashEntryType::CustomerRefundOut)->where('location', CashLocation::Drawer)->value('amount'))->toBe(132)
         ->and(Sale::query()->find($sale['id'])->lines()->where('product_id', $soap->id)->value('quantity_returned'))->toBe(0);
 });
 
@@ -141,6 +142,7 @@ it('earns on cash and card only and skips points for a walk-in', function () {
     posLot($warehouse, $product, null, LotOwnership::Owned, 70, 5, now());
     $customer = posCustomer('+8801711000002', 0);
     $cashier = posUser('Cashier');
+    openDrawerFor($cashier, $warehouse->id);
 
     $this->actingAs($cashier)->withHeaders(['Idempotency-Key' => 'earn-220'])
         ->postJson('/api/v1/sales', posSaleBody($warehouse, $product, $customer, 1, [
@@ -182,6 +184,7 @@ it('rejects too many points and replays a sale without a second movement', funct
     posLot($warehouse, $product, null, LotOwnership::Owned, 70, 5, now());
     $customer = posCustomer('+8801711000001', 10);
     $cashier = posUser('Cashier');
+    openDrawerFor($cashier, $warehouse->id);
     $body = posSaleBody($warehouse, $product, $customer, 1, [
         ['type' => 'points', 'amount' => 30],
         ['type' => 'cash', 'amount' => 120],
@@ -234,6 +237,7 @@ it('consumes an owned lot before an older consignment lot and rejects a shortage
     $consignment = posLot($warehouse, $product, $supplier, LotOwnership::Consignment, 60, 4, now()->subDays(2));
     $owned = posLot($warehouse, $product, null, LotOwnership::Owned, 70, 1, now());
     $cashier = posUser('Cashier');
+    openDrawerFor($cashier, $warehouse->id);
 
     $sale = $this->actingAs($cashier)->withHeaders(['Idempotency-Key' => 'owned-first'])
         ->postJson('/api/v1/sales', posSaleBody($warehouse, $product, null, 1, [
@@ -273,6 +277,7 @@ it('creates a consignment payable at lot cost even when points reduce the shelf'
     posLot($warehouse, $soap, $supplier, LotOwnership::Consignment, 60, 3, now());
     $customer = posCustomer('+8801711000001', 30);
     $cashier = posUser('Cashier');
+    openDrawerFor($cashier, $warehouse->id);
 
     $sale = $this->actingAs($cashier)->withHeaders(['Idempotency-Key' => 'payable'])
         ->postJson('/api/v1/sales', posSaleBody($warehouse, $soap, $customer, 1, [
@@ -292,6 +297,7 @@ it('keeps two partial refunds inside the stored line', function () {
     $product = posProduct('MUG', 101);
     $lot = posLot($warehouse, $product, null, LotOwnership::Owned, 40, 2, now());
     $cashier = posUser('Cashier');
+    openDrawerFor($cashier, $warehouse->id);
     $manager = posUser('Manager');
 
     $sale = $this->actingAs($cashier)->withHeaders(['Idempotency-Key' => 'partial'])
@@ -325,6 +331,7 @@ it('writes nothing on reject and pays only after approval', function () {
     $product = posProduct('MUG', 150);
     $lot = posLot($warehouse, $product, null, LotOwnership::Owned, 70, 2, now());
     $cashier = posUser('Cashier');
+    openDrawerFor($cashier, $warehouse->id);
     $manager = posUser('Manager');
     $sale = postedSale($cashier, $warehouse, $product, null, 1, [['type' => 'cash', 'amount' => 150]]);
     $movements = StockMovement::query()->count();
@@ -352,6 +359,7 @@ it('credits an open consignment payable and opens a draft supplier return for da
     $soapLot = posLot($warehouse, $soap, $supplier, LotOwnership::Consignment, 60, 1, now());
     $mugLot = posLot($warehouse, $mug, null, LotOwnership::Owned, 70, 1, now());
     $cashier = posUser('Cashier');
+    openDrawerFor($cashier, $warehouse->id);
     $manager = posUser('Manager');
 
     $soapSale = postedSale($cashier, $warehouse, $soap, null, 1, [['type' => 'cash', 'amount' => 100]], 'consign-sale');
@@ -392,6 +400,7 @@ it('allows a clawback below zero and then refuses another redemption', function 
     posLot($warehouse, $second, null, LotOwnership::Owned, 40, 1, now());
     $customer = posCustomer('+8801711000003', 0);
     $cashier = posUser('Cashier');
+    openDrawerFor($cashier, $warehouse->id);
     $manager = posUser('Manager');
 
     $earned = postedSale($cashier, $warehouse, $first, $customer, 1, [['type' => 'cash', 'amount' => 220]], 'earn');
@@ -430,6 +439,7 @@ it('voids a sale with no return and refuses a void after any return', function (
     $lot = posLot($warehouse, $product, $supplier, LotOwnership::Consignment, 60, 2, now());
     $customer = posCustomer('+8801711000004', 10);
     $cashier = posUser('Cashier');
+    openDrawerFor($cashier, $warehouse->id);
     $manager = posUser('Manager');
 
     $sale = postedSale($cashier, $warehouse, $product, $customer, 1, [
@@ -597,6 +607,8 @@ function postedSale(
     array $tenders,
     string $key = 'sale',
 ): array {
+    openDrawerFor($cashier, $warehouse->id);
+
     return test()->actingAs($cashier)->withHeaders(['Idempotency-Key' => $key])
         ->postJson('/api/v1/sales', posSaleBody($warehouse, $product, $customer, $quantity, $tenders))
         ->assertCreated()

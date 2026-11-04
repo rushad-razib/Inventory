@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+import { BrandMark } from "../components/BrandMark";
 import { useAuth } from "../lib/auth";
 import { can } from "../lib/permissions";
 import { CommandPalette } from "./CommandPalette";
@@ -15,6 +16,7 @@ export function AppShell() {
   const { user, logout } = useAuth();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(true);
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -136,70 +138,99 @@ export function AppShell() {
       <header className={styles.header}>
         <div className={styles.topBar}>
           <div className={styles.topLeft}>
-            <div className={styles.brand}>Meridian</div>
+            <BrandMark className={styles.brand} logoClassName={styles.brandLogo} />
             <button className={styles.searchButton} type="button" onClick={() => setPaletteOpen(true)}>
               Search
             </button>
           </div>
-          <div className={styles.profile} ref={profileRef}>
+          <div className={styles.topRight}>
             <button
-              className={styles.profileButton}
+              className={styles.navToggle}
               type="button"
-              aria-label="Account"
-              aria-haspopup="menu"
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((open) => !open)}
+              aria-expanded={navOpen}
+              aria-controls="app-nav"
+              aria-label={navOpen ? "Hide menu" : "Show menu"}
+              onClick={() => setNavOpen((open) => !open)}
             >
-              <svg className={styles.profileIcon} viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+              <svg
+                className={navOpen ? styles.chevron : `${styles.chevron} ${styles.chevronClosed}`}
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path
-                  d="M5.5 19.2c1.4-2.8 3.6-4.2 6.5-4.2s5.1 1.4 6.5 4.2"
+                  d="M6 14.5 12 8.5l6 6"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.8"
                   strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
               </svg>
             </button>
-            {menuOpen ? (
-              <div className={styles.profileMenu} role="menu">
-                <NavLink
-                  className={styles.profileMenuItem}
-                  role="menuitem"
-                  to="/profile"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  Profile
-                </NavLink>
-                <button
-                  className={styles.profileMenuItem}
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    void logout();
-                  }}
-                >
-                  Log out
-                </button>
-              </div>
-            ) : null}
+            <div className={styles.profile} ref={profileRef}>
+              <button
+                className={styles.profileButton}
+                type="button"
+                aria-label="Account"
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen((open) => !open)}
+              >
+                <svg className={styles.profileIcon} viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                  <path
+                    d="M5.5 19.2c1.4-2.8 3.6-4.2 6.5-4.2s5.1 1.4 6.5 4.2"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+              {menuOpen ? (
+                <div className={styles.profileMenu} role="menu">
+                  <NavLink
+                    className={styles.profileMenuItem}
+                    role="menuitem"
+                    to="/profile"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Profile
+                  </NavLink>
+                  <button
+                    className={styles.profileMenuItem}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      void logout();
+                    }}
+                  >
+                    Log out
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
-        <nav className={styles.nav}>
-          {items
-            .filter((item) => item.visible)
-            .map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === "/"}
-                className={({ isActive }) => (isActive ? styles.navItemActive : styles.navItem)}
-              >
-                {item.label}
-              </NavLink>
-            ))}
-        </nav>
+        <div className={navOpen ? styles.navWrap : `${styles.navWrap} ${styles.navWrapClosed}`}>
+          <div className={styles.navClip}>
+            <nav id="app-nav" className={styles.nav} inert={navOpen ? undefined : true}>
+              {items
+                .filter((item) => item.visible)
+                .map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === "/"}
+                    className={({ isActive }) => (isActive ? styles.navItemActive : styles.navItem)}
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
+            </nav>
+          </div>
+        </div>
       </header>
       <main className={styles.main}>
         <Outlet />

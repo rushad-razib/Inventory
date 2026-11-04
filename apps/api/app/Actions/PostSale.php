@@ -16,6 +16,7 @@ use App\Http\Resources\SaleResource;
 use App\Models\CashEntry;
 use App\Models\CompanySetting;
 use App\Models\Customer;
+use App\Models\DrawerSession;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleLine;
@@ -77,6 +78,7 @@ final class PostSale
         $quoted = $this->quoteLines($input['lines']);
         $subtotal = (int) $quoted->sum('shelf_total');
         $tenders = $this->tenders($input['tenders'], $customer, $subtotal, $settings->point_redeem_value);
+        $drawer = $this->openDrawer($actor, $warehouseId);
         $pointsRedeemed = $tenders['points'];
         $cashAndCard = $tenders['cash'] + $tenders['card'];
         $pointsEarned = $customer === null || $settings->points_earn_per <= 0
@@ -115,7 +117,7 @@ final class PostSale
         }
 
         if ($tenders['cash'] > 0) {
-            $this->cash($sale, $actor, CashLocation::Till, CashDirection::In, CashEntryType::SaleCashIn, $tenders['cash']);
+            $this->cash($sale, $actor, CashLocation::Drawer, CashDirection::In, CashEntryType::SaleCashIn, $tenders['cash'], $drawer->id);
         }
 
         if ($tenders['card'] > 0) {
@@ -323,6 +325,21 @@ final class PostSale
         }
     }
 
+    private function openDrawer(User $actor, string $warehouseId): DrawerSession
+    {
+        $drawer = DrawerSession::openFor($actor);
+
+        if ($drawer === null) {
+            throw new LedgerException('invalid-state', 'Open a drawer before posting a sale.', 422);
+        }
+
+        if ($drawer->warehouse_id !== $warehouseId) {
+            throw new LedgerException('invalid-state', 'This sale is for a different warehouse than your open drawer.', 422);
+        }
+
+        return $drawer;
+    }
+
     private function cash(
         Sale $sale,
         User $actor,
@@ -330,6 +347,7 @@ final class PostSale
         CashDirection $direction,
         CashEntryType $type,
         int $amount,
+        ?string $drawerSessionId = null,
     ): void {
         CashEntry::query()->create([
             'location' => $location,
@@ -338,6 +356,7 @@ final class PostSale
             'amount' => $amount,
             'source_type' => $sale->getMorphClass(),
             'source_id' => $sale->id,
+            'drawer_session_id' => $drawerSessionId,
             'actor_id' => $actor->id,
             'occurred_at' => now(),
         ]);

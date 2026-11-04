@@ -23,6 +23,7 @@ class CashEntry extends Model
         'amount',
         'source_type',
         'source_id',
+        'drawer_session_id',
         'actor_id',
         'occurred_at',
     ];
@@ -55,5 +56,13 @@ class CashEntry extends Model
     public function source(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * @return BelongsTo<DrawerSession, $this>
+     */
+    public function drawerSession(): BelongsTo
+    {
+        return $this->belongsTo(DrawerSession::class);
     }
 }

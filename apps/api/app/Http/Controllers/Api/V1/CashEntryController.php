@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Actions\AdjustCash;
+use App\Enums\CashDirection;
 use App\Enums\CashLocation;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Cash\StoreCashMovementRequest;
 use App\Http\Resources\CashEntryResource;
 use App\Http\Responses\ApiResponse;
 use App\Http\Responses\ProblemResponse;
@@ -16,7 +19,7 @@ use InvalidArgumentException;
 
 class CashEntryController extends Controller
 {
-    #[QueryParameter('filter[location]', description: 'till or bank', type: 'string')]
+    #[QueryParameter('filter[location]', description: 'cash, bank, or drawer', type: 'string')]
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', CashEntry::class);
@@ -51,5 +54,23 @@ class CashEntryController extends Controller
         $this->authorize('viewAny', CashEntry::class);
 
         return ApiResponse::data($balances->totals());
+    }
+
+    public function store(StoreCashMovementRequest $request, AdjustCash $action): JsonResponse
+    {
+        if (! $request->user()->can('cash.manage')) {
+            return $this->forbidden('You do not have permission to adjust cash.');
+        }
+
+        $entry = $action(
+            $request->user(),
+            CashLocation::fromLabel($request->string('location')->toString()),
+            CashDirection::fromLabel($request->string('direction')->toString()),
+            $request->integer('amount'),
+            $request->string('note')->toString(),
+            $request,
+        );
+
+        return ApiResponse::data(new CashEntryResource($entry), 201);
     }
 }

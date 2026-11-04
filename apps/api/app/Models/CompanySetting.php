@@ -11,6 +11,9 @@ class CompanySetting extends Model
 
     protected $fillable = [
         'name',
+        'title',
+        'logo_path',
+        'favicon_path',
         'currency',
         'po_approval_threshold',
         'adjustment_approval_threshold',
@@ -34,5 +37,14 @@ class CompanySetting extends Model
     public static function current(): self
     {
         return static::query()->firstOrFail();
+    }
+
+    public function publicAssetUrl(?string $path): ?string
+    {
+        if ($path === null || $path === '') {
+            return null;
+        }
+
+        return '/storage/'.ltrim($path, '/');
     }
 }

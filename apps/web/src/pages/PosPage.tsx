@@ -1,12 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
+  closeDrawer,
   createCustomer,
   createSale,
+  getCurrentDrawer,
   listProducts,
   listWarehouses,
   lookupCustomer,
   lookupProduct,
+  openDrawer,
   type Customer,
   type Product,
   type Sale,
@@ -31,8 +34,16 @@ export function PosPage() {
   const [cashReceived, setCashReceived] = useState(0);
   const [posted, setPosted] = useState<Sale | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [openingBalance, setOpeningBalance] = useState("");
+  const [counted, setCounted] = useState("");
 
-  const warehousesQuery = useQuery({ queryKey: ["warehouses"], queryFn: listWarehouses, enabled: pin === null });
+  const drawerQuery = useQuery({ queryKey: ["drawer", "current"], queryFn: getCurrentDrawer });
+  const drawer = drawerQuery.data ?? null;
+  const warehousesQuery = useQuery({
+    queryKey: ["warehouses"],
+    queryFn: listWarehouses,
+    enabled: pin === null && drawer === null,
+  });
   const productsQuery = useQuery({ queryKey: ["products"], queryFn: () => listProducts() });
   const products = (productsQuery.data?.data ?? []).filter((product) => product.track_stock && product.is_active);
   const shelf = cartShelfTotal(cart.map((line) => ({ unitPrice: line.product.sell_price, quantity: line.quantity })));
@@ -105,8 +116,11 @@ export function PosPage() {
       if (cashDue > 0) {
         tenders.push({ type: "cash", amount: cashDue });
       }
+      if (!drawer) {
+        throw new Error("Open a drawer before posting a sale.");
+      }
       return createSale({
-        warehouse_id: warehouseId,
+        warehouse_id: drawer.warehouse_id,
         customer_id: customer?.id ?? null,
         lines: cart.map((line) => ({ product_id: line.product.id, quantity: line.quantity })),
         tenders,
@@ -123,20 +137,134 @@ export function PosPage() {
         queryClient.invalidateQueries({ queryKey: ["sales"] }),
         queryClient.invalidateQueries({ queryKey: ["stock-balances"] }),
         queryClient.invalidateQueries({ queryKey: ["supplier-bills"] }),
+        queryClient.invalidateQueries({ queryKey: ["drawer", "current"] }),
       ]);
     },
     onError: (err: Error) => setError(err.message),
   });
+
+  const openMutation = useMutation({
+    mutationFn: () =>
+      openDrawer({
+        warehouse_id: pin ?? warehouseId,
+        opening_balance: Number(openingBalance),
+      }),
+    onSuccess: async () => {
+      setOpeningBalance("");
+      setError(null);
+      await queryClient.invalidateQueries({ queryKey: ["drawer", "current"] });
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  const closeMutation = useMutation({
+    mutationFn: () => closeDrawer(drawer?.id ?? "", Number(counted)),
+    onSuccess: async () => {
+      setCounted("");
+      setCart([]);
+      setError(null);
+      await queryClient.invalidateQueries({ queryKey: ["drawer", "current"] });
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  const countedAmount = counted === "" ? null : Number(counted);
+  const difference = drawer && countedAmount !== null ? countedAmount - drawer.balance : null;
 
   return (
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
           <h1 className={styles.title}>Till</h1>
-          <p className={styles.subtitle}>Scan a barcode, take cash, card, or points. Stock moves when the sale posts.</p>
+          <p className={styles.subtitle}>Open a drawer, then scan a barcode and take cash, card, or points.</p>
         </div>
       </header>
 
+      {drawerQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
+      {drawerQuery.isError ? <p className={styles.error}>{(drawerQuery.error as Error).message}</p> : null}
+
+      {drawerQuery.isSuccess && drawer === null ? (
+        <section className={styles.panel}>
+          <h2 className={styles.panelTitle}>Open drawer</h2>
+          <p className={styles.muted}>The opening balance is taken from main cash and becomes the float for change.</p>
+          <form
+            className={styles.form}
+            onSubmit={(event) => {
+              event.preventDefault();
+              openMutation.mutate();
+            }}
+          >
+            {pin === null ? (
+              <label className={styles.label}>
+                Warehouse
+                <select className={styles.select} value={warehouseId} onChange={(event) => setWarehouseId(event.target.value)}>
+                  <option value="">Choose a warehouse</option>
+                  {(warehousesQuery.data?.data ?? []).map((warehouse) => (
+                    <option key={warehouse.id} value={warehouse.id}>
+                      {warehouse.code} · {warehouse.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <p className={styles.muted}>Opening at your pinned warehouse.</p>
+            )}
+            <label className={styles.label}>
+              Opening balance
+              <input
+                className={`mono ${styles.input}`}
+                type="number"
+                min={1}
+                value={openingBalance}
+                onChange={(event) => setOpeningBalance(event.target.value)}
+              />
+            </label>
+            {error ? <p className={styles.error}>{error}</p> : null}
+            <button
+              className={styles.button}
+              type="submit"
+              disabled={openMutation.isPending || (pin ?? warehouseId) === "" || Number(openingBalance) < 1}
+            >
+              {openMutation.isPending ? "Opening…" : "Open drawer"}
+            </button>
+          </form>
+        </section>
+      ) : null}
+
+      {drawer ? (
+      <section className={styles.panel}>
+        <h2 className={styles.panelTitle}>Drawer</h2>
+        <div className={`mono ${styles.tillTotals}`}>
+          <p>Float {formatTaka(drawer.opening_amount)}</p>
+          <p>Expected {formatTaka(drawer.balance)}</p>
+        </div>
+        <form
+          className={styles.form}
+          onSubmit={(event) => {
+            event.preventDefault();
+            closeMutation.mutate();
+          }}
+        >
+          <label className={styles.label}>
+            Counted cash
+            <input
+              className={`mono ${styles.input}`}
+              type="number"
+              min={0}
+              value={counted}
+              onChange={(event) => setCounted(event.target.value)}
+            />
+          </label>
+          {difference !== null ? <p className={`mono ${styles.tillTotals}`}>Difference {formatTaka(difference)}</p> : null}
+          {error ? <p className={styles.error}>{error}</p> : null}
+          <button className={styles.button} type="submit" disabled={closeMutation.isPending || countedAmount === null}>
+            {closeMutation.isPending ? "Closing…" : "Close drawer"}
+          </button>
+        </form>
+      </section>
+      ) : null}
+
+      {drawer ? (
       <div className={styles.till}>
       <div className={styles.stack}>
       <section className={styles.panel}>
@@ -149,21 +277,7 @@ export function PosPage() {
             }
           }}
         >
-          {pin === null ? (
-            <label className={styles.label}>
-              Warehouse
-              <select className={styles.select} value={warehouseId} onChange={(event) => setWarehouseId(event.target.value)}>
-                <option value="">Choose a warehouse</option>
-                {(warehousesQuery.data?.data ?? []).map((warehouse) => (
-                  <option key={warehouse.id} value={warehouse.id}>
-                    {warehouse.code} · {warehouse.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : (
-            <p className={styles.muted}>Selling from your pinned warehouse.</p>
-          )}
+          <p className={styles.muted}>Selling from your open drawer.</p>
           <label className={styles.label}>
             Barcode
             <input className={`${styles.input} ${styles.barcodeInput}`} value={barcode} onChange={(event) => setBarcode(event.target.value)} autoFocus />
@@ -291,13 +405,14 @@ export function PosPage() {
         <button
           className={styles.button}
           type="button"
-          disabled={saleMutation.isPending || cart.length === 0 || warehouseId === "" || cashDue + card + appliedPoints !== shelf}
+          disabled={saleMutation.isPending || cart.length === 0 || cashDue + card + appliedPoints !== shelf}
           onClick={() => saleMutation.mutate()}
         >
           {saleMutation.isPending ? "Posting…" : "Post sale"}
         </button>
       </section>
       </div>
+      ) : null}
 
       {posted ? (
         <section className={styles.panel}>

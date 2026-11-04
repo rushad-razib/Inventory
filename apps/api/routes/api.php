@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\CustomerReturnController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DepartmentController;
+use App\Http\Controllers\Api\V1\DrawerController;
 use App\Http\Controllers\Api\V1\GoodsReceiptController;
 use App\Http\Controllers\Api\V1\ImageController;
 use App\Http\Controllers\Api\V1\ProductController;
@@ -33,6 +34,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('web');
+    Route::get('/branding', [SettingsController::class, 'branding']);
 
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('web');
@@ -44,6 +46,10 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/settings', [SettingsController::class, 'show']);
         Route::patch('/settings', [SettingsController::class, 'update']);
+        Route::post('/settings/logo', [SettingsController::class, 'storeLogo']);
+        Route::delete('/settings/logo', [SettingsController::class, 'destroyLogo']);
+        Route::post('/settings/favicon', [SettingsController::class, 'storeFavicon']);
+        Route::delete('/settings/favicon', [SettingsController::class, 'destroyFavicon']);
 
         Route::get('/departments', [DepartmentController::class, 'index']);
         Route::post('/departments', [DepartmentController::class, 'store']);
@@ -129,6 +135,12 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/cash-entries', [CashEntryController::class, 'index']);
         Route::get('/cash-balances', [CashEntryController::class, 'balances']);
+        Route::post('/cash-movements', [CashEntryController::class, 'store']);
+
+        Route::get('/drawers', [DrawerController::class, 'index']);
+        Route::get('/drawers/current', [DrawerController::class, 'current']);
+        Route::post('/drawers', [DrawerController::class, 'store']);
+        Route::post('/drawers/{drawer}/close', [DrawerController::class, 'close']);
 
         Route::get('/sales', [SaleController::class, 'index']);
         Route::post('/sales', [SaleController::class, 'store']);

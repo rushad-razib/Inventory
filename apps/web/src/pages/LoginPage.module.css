@@ -18,11 +18,20 @@
 
 .brand {
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   font-size: 0.85rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-teal);
   font-weight: 600;
+}
+
+.brandLogo {
+  height: 1.35rem;
+  width: auto;
+  display: block;
 }
 
 .title {

@@ -3,6 +3,7 @@
 use App\Models\User;
 use Database\Seeders\DemoSeeder;
 use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -174,10 +175,50 @@ it('allows a cashier to read settings without settings.manage', function () {
     $user->assignRole('Cashier');
     app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-    $response = $this->actingAs($user)->getJson('/api/v1/settings');
+    $this->actingAs($user)
+        ->getJson('/api/v1/settings')
+        ->assertOk()
+        ->assertJsonPath('data.currency', 'BDT')
+        ->assertJsonPath('data.title', 'Meridian');
 
-    $response->assertOk()
-        ->assertJsonPath('data.currency', 'BDT');
+    $this->actingAs($user)
+        ->getJson('/api/v1/branding')
+        ->assertOk()
+        ->assertJsonPath('data.name', 'Hart & Field')
+        ->assertJsonPath('data.title', 'Meridian')
+        ->assertJsonPath('data.logo_url', null);
+
+    $this->actingAs($user)
+        ->post('/api/v1/settings/logo', [
+            'image' => UploadedFile::fake()->image('logo.png'),
+        ], ['Accept' => 'application/json'])
+        ->assertForbidden();
+
+    $this->actingAs($user)
+        ->post('/api/v1/settings/favicon', [
+            'image' => UploadedFile::fake()->image('icon.png'),
+        ], ['Accept' => 'application/json'])
+        ->assertForbidden();
+});
+
+it('lets a guest read branding but not change settings', function () {
+    $this->seed(DemoSeeder::class);
+
+    $this->getJson('/api/v1/branding')
+        ->assertOk()
+        ->assertJsonPath('data.name', 'Hart & Field')
+        ->assertJsonPath('data.title', 'Meridian')
+        ->assertJsonPath('data.logo_url', null)
+        ->assertJsonPath('data.favicon_url', null);
+
+    $this->patchJson('/api/v1/settings', [
+        'title' => 'Other',
+    ])->assertUnauthorized();
+
+    $this->postJson('/api/v1/settings/logo')->assertUnauthorized();
+    $this->postJson('/api/v1/settings/favicon')->assertUnauthorized();
+    $this->deleteJson('/api/v1/settings/logo')->assertUnauthorized();
+    $this->deleteJson('/api/v1/settings/favicon')->assertUnauthorized();
 });
 
 it('forbids a cashier from patching settings without settings.manage', function () {

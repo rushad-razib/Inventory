@@ -33,6 +33,7 @@ class RolePermissionSeeder extends Seeder
             'sales.void',
             'reports.view',
             'audit.view',
+            'cash.manage',
         ];
 
         foreach ($permissions as $permission) {
@@ -48,6 +49,7 @@ class RolePermissionSeeder extends Seeder
                 'reports.view',
                 'audit.view',
                 'inventory.view',
+                'cash.manage',
             ],
             'Procurement' => [
                 'suppliers.manage',

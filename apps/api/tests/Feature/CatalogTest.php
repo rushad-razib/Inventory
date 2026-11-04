@@ -30,6 +30,17 @@ it('allows a cashier to get settings but forbids patching them', function () {
         ->assertJsonPath('data.currency', 'BDT');
 
     $this->actingAs($user)
+        ->getJson('/api/v1/branding')
+        ->assertOk()
+        ->assertJsonPath('data.name', 'Hart & Field');
+
+    $this->actingAs($user)
+        ->post('/api/v1/settings/logo', [
+            'image' => UploadedFile::fake()->image('logo.png'),
+        ], ['Accept' => 'application/json'])
+        ->assertForbidden();
+
+    $this->actingAs($user)
         ->patchJson('/api/v1/settings', [
             'po_approval_threshold' => 99999,
         ])
@@ -156,6 +167,78 @@ it('writes audit rows when settings or product price change', function () {
     expect(AuditLog::query()->where('action', 'product.price_changed')->count())->toBe(1);
     expect(CompanySetting::current()->po_approval_threshold)->toBe(25000);
     expect(Customer::query()->count())->toBe(2);
+});
+
+it('updates branding files and audits the change', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->create();
+    $admin->assignRole('Admin');
+    app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+    $this->actingAs($admin)
+        ->patchJson('/api/v1/settings', [
+            'name' => 'Northwind',
+            'title' => 'Northwind Desk',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.name', 'Northwind')
+        ->assertJsonPath('data.title', 'Northwind Desk');
+
+    $this->actingAs($admin)
+        ->patchJson('/api/v1/settings', [
+            'title' => '',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.title', null);
+
+    $this->getJson('/api/v1/branding')
+        ->assertOk()
+        ->assertJsonPath('data.name', 'Northwind')
+        ->assertJsonPath('data.title', null);
+
+    $logo = UploadedFile::fake()->createWithContent(
+        'mark.svg',
+        '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"></svg>',
+    );
+
+    $this->actingAs($admin)
+        ->post('/api/v1/settings/logo', [
+            'image' => $logo,
+        ], ['Accept' => 'application/json'])
+        ->assertOk()
+        ->assertJsonPath('data.logo_url', fn (string $url) => str_starts_with($url, '/storage/branding/'));
+
+    $logoPath = CompanySetting::current()->logo_path;
+    expect($logoPath)->not->toBeNull();
+    Storage::disk('public')->assertExists($logoPath);
+
+    $favicon = UploadedFile::fake()->image('icon.png', 16, 16);
+
+    $this->actingAs($admin)
+        ->post('/api/v1/settings/favicon', [
+            'image' => $favicon,
+        ], ['Accept' => 'application/json'])
+        ->assertOk()
+        ->assertJsonPath('data.favicon_url', fn (string $url) => str_starts_with($url, '/storage/branding/'));
+
+    Storage::disk('public')->assertExists(CompanySetting::current()->favicon_path);
+
+    $this->actingAs($admin)
+        ->deleteJson('/api/v1/settings/logo')
+        ->assertOk()
+        ->assertJsonPath('data.logo_url', null);
+
+    Storage::disk('public')->assertMissing($logoPath);
+
+    $this->actingAs($admin)
+        ->deleteJson('/api/v1/settings/favicon')
+        ->assertOk()
+        ->assertJsonPath('data.favicon_url', null);
+
+    expect(AuditLog::query()->where('action', 'settings.updated')->count())->toBe(6);
+    expect(CompanySetting::current()->logo_path)->toBeNull()
+        ->and(CompanySetting::current()->favicon_path)->toBeNull();
 });
 
 it('searches products, suppliers, customers, and purchase orders', function () {

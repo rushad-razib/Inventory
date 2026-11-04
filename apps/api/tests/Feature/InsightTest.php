@@ -74,6 +74,7 @@ it('keeps the sold mug in demand and roi and drops a refunded or voided line', f
     posLot($warehouse, $bowl, null, LotOwnership::Owned, 20, 5, now());
     $customer = posCustomer('+8801711000091', 30);
     $cashier = posUser('Cashier');
+    openDrawerFor($cashier, $warehouse->id);
     $manager = posUser('Manager');
 
     $sale = $this->actingAs($cashier)->withHeaders(['Idempotency-Key' => 'insight-mug'])
@@ -176,6 +177,7 @@ it('reports rung-up tenders by day without rewriting them after a refund', funct
     posLot($warehouse, $product, null, LotOwnership::Owned, 70, 5, now());
     $customer = posCustomer('+8801711000092', 30);
     $cashier = posUser('Cashier');
+    openDrawerFor($cashier, $warehouse->id);
     $manager = posUser('Manager');
 
     $sale = $this->actingAs($cashier)->withHeaders(['Idempotency-Key' => 'insight-sales'])
@@ -233,6 +235,7 @@ it('filters movement history and exports every matching row', function () {
     $product = posProduct('MUG', 100);
     posLot($warehouse, $product, null, LotOwnership::Owned, 70, 5, now());
     $cashier = posUser('Cashier');
+    openDrawerFor($cashier, $warehouse->id);
     $manager = posUser('Manager');
 
     $this->actingAs($cashier)->withHeaders(['Idempotency-Key' => 'insight-move'])
@@ -350,6 +353,7 @@ it('fills dashboard tiles from the ledgers and includes the chart series', funct
     posLot($warehouse, $product, null, LotOwnership::Owned, 70, 4, now());
     posLot($warehouse, $soap, posSupplier('UNI', SupplyMode::Consignment), LotOwnership::Consignment, 40, 2, now());
     $cashier = posUser('Cashier');
+    openDrawerFor($cashier, $warehouse->id);
     $manager = posUser('Manager');
     $supplier = posSupplier('ACME', SupplyMode::Outright);
 
@@ -437,7 +441,7 @@ it('fills dashboard tiles from the ledgers and includes the chart series', funct
         'open_purchase_orders' => 2,
         'pending_approvals' => 2,
         'payables_due' => 180,
-        'till' => 100,
+        'cash' => 0,
         'bank' => 40,
     ])->and($dashboard['data']['demand'])->not->toBeEmpty()
         ->and($dashboard['meta']['group'])->toBe('product');
@@ -448,6 +452,7 @@ it('filters the audit log by actor, action, and auditable type', function () {
     $product = posProduct('MUG', 100);
     posLot($warehouse, $product, null, LotOwnership::Owned, 70, 5, now());
     $cashier = posUser('Cashier');
+    openDrawerFor($cashier, $warehouse->id);
     $manager = posUser('Manager');
 
     $this->actingAs($cashier)->withHeaders(['Idempotency-Key' => 'insight-audit'])

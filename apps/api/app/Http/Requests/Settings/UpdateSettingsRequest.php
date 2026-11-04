@@ -11,6 +11,13 @@ class UpdateSettingsRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->exists('title') && $this->input('title') === '') {
+            $this->merge(['title' => null]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -18,6 +25,7 @@ class UpdateSettingsRequest extends FormRequest
     {
         return [
             'name' => ['sometimes', 'string', 'max:255'],
+            'title' => ['sometimes', 'nullable', 'string', 'max:255'],
             'po_approval_threshold' => ['sometimes', 'integer', 'min:0'],
             'adjustment_approval_threshold' => ['sometimes', 'integer', 'min:0'],
             'points_earn_per' => ['sometimes', 'integer', 'min:1'],

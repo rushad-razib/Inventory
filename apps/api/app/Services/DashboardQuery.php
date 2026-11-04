@@ -46,7 +46,7 @@ final class DashboardQuery
      *     open_purchase_orders: int,
      *     pending_approvals: int,
      *     payables_due: int,
-     *     till: int,
+     *     cash: int,
      *     bank: int
      * }
      */
@@ -94,7 +94,7 @@ final class DashboardQuery
                 ->whereDate('due_on', '<=', $today)
                 ->whereRaw('amount - amount_paid - credited_amount > 0')
                 ->sum(DB::raw('amount - amount_paid - credited_amount')),
-            'till' => $cash['till'],
+            'cash' => $cash['cash'],
             'bank' => $cash['bank'],
         ];
     }

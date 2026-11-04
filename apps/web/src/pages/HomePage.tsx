@@ -76,7 +76,7 @@ function Dashboard() {
           <Tile label="Open orders" value={String(tiles.open_purchase_orders)} />
           <Tile label="Pending approvals" value={String(tiles.pending_approvals)} />
           <Tile label="Payables due" value={formatTaka(tiles.payables_due)} />
-          <Tile label="Till" value={formatTaka(tiles.till)} />
+          <Tile label="Cash" value={formatTaka(tiles.cash)} />
           <Tile label="Bank" value={formatTaka(tiles.bank)} />
         </div>
       ) : null}

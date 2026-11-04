@@ -495,7 +495,7 @@ paths:
         -
           name: 'filter[location]'
           in: query
-          description: 'till or bank'
+          description: 'cash, bank, or drawer'
           schema:
             type: string
       responses:
@@ -582,6 +582,63 @@ paths:
           $ref: '#/components/responses/AuthorizationException'
         401:
           $ref: '#/components/responses/AuthenticationException'
+  /v1/cash-movements:
+    post:
+      operationId: cashEntry.store
+      tags:
+        - CashEntry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreCashMovementRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to adjust cash.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
   /v1/categories:
     get:
       operationId: category.index
@@ -1559,6 +1616,211 @@ paths:
                   - status
                   - detail
                   - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  /v1/drawers:
+    get:
+      operationId: drawer.index
+      tags:
+        - Drawer
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      last_page: { type: integer }
+                    required:
+                      - page
+                      - per_page
+                      - total
+                      - last_page
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to list drawers.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: drawer.store
+      tags:
+        - Drawer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenDrawerRequest'
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to open a drawer.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+  /v1/drawers/current:
+    get:
+      operationId: drawer.current
+      tags:
+        - Drawer
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to view a drawer.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/drawers/{drawer}/close':
+    post:
+      operationId: drawer.close
+      tags:
+        - Drawer
+      parameters:
+        -
+          name: drawer
+          in: path
+          required: true
+          description: 'The drawer ID'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloseDrawerRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
         404:
           $ref: '#/components/responses/ModelNotFoundException'
         401:
@@ -2941,6 +3203,26 @@ paths:
           $ref: '#/components/responses/ModelNotFoundException'
         401:
           $ref: '#/components/responses/AuthenticationException'
+  /v1/branding:
+    get:
+      operationId: settings.branding
+      tags:
+        - Settings
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
   /v1/settings:
     get:
       operationId: settings.show
@@ -3018,6 +3300,216 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         422:
           $ref: '#/components/responses/ValidationException'
+  /v1/settings/logo:
+    post:
+      operationId: settings.storeLogo
+      tags:
+        - Settings
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StoreLogoRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to update company settings.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: settings.destroyLogo
+      tags:
+        - Settings
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to update company settings.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/settings/favicon:
+    post:
+      operationId: settings.storeFavicon
+      tags:
+        - Settings
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StoreFaviconRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to update company settings.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
+        422:
+          $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: settings.destroyFavicon
+      tags:
+        - Settings
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to update company settings.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        401:
+          $ref: '#/components/responses/AuthenticationException'
   /v1/stock-balances:
     get:
       operationId: stock.balances
@@ -4859,6 +5351,15 @@ paths:
           $ref: '#/components/responses/ValidationException'
 components:
   schemas:
+    CloseDrawerRequest:
+      type: object
+      properties:
+        counted_amount:
+          type: integer
+          minimum: 0
+      required:
+        - counted_amount
+      title: CloseDrawerRequest
     CreateTokenRequest:
       type: object
       properties:
@@ -4886,6 +5387,19 @@ components:
         - email
         - password
       title: LoginRequest
+    OpenDrawerRequest:
+      type: object
+      properties:
+        warehouse_id:
+          type: string
+          format: uuid
+        opening_balance:
+          type: integer
+          minimum: 1
+      required:
+        - warehouse_id
+        - opening_balance
+      title: OpenDrawerRequest
     PurchaseOrderFromAlertsRequest:
       type: object
       properties:
@@ -4930,6 +5444,31 @@ components:
         - quantity
         - reason
       title: StoreAdjustmentRequest
+    StoreCashMovementRequest:
+      type: object
+      properties:
+        location:
+          type: string
+          enum:
+            - cash
+            - bank
+        direction:
+          type: string
+          enum:
+            - in
+            - out
+        amount:
+          type: integer
+          minimum: 1
+        note:
+          type: string
+          maxLength: 500
+      required:
+        - location
+        - direction
+        - amount
+        - note
+      title: StoreCashMovementRequest
     StoreCategoryRequest:
       type: object
       properties:
@@ -4999,6 +5538,17 @@ components:
       required:
         - name
       title: StoreDepartmentRequest
+    StoreFaviconRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          format: binary
+          contentMediaType: application/octet-stream
+          description: 'Maximum file size: 512 kilobytes.'
+      required:
+        - image
+      title: StoreFaviconRequest
     StoreGoodsReceiptRequest:
       type: object
       properties:
@@ -5044,6 +5594,17 @@ components:
       required:
         - image
       title: StoreImageRequest
+    StoreLogoRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          format: binary
+          contentMediaType: application/octet-stream
+          description: 'Maximum file size: 2048 kilobytes.'
+      required:
+        - image
+      title: StoreLogoRequest
     StoreProductRequest:
       type: object
       properties:
@@ -5531,6 +6092,11 @@ components:
       properties:
         name:
           type: string
+          maxLength: 255
+        title:
+          type:
+            - string
+            - 'null'
           maxLength: 255
         po_approval_threshold:
           type: integer

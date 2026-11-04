@@ -17,6 +17,9 @@ class CompanySettingResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'title' => $this->title,
+            'logo_url' => $this->publicAssetUrl($this->logo_path),
+            'favicon_url' => $this->publicAssetUrl($this->favicon_path),
             'currency' => $this->currency,
             'po_approval_threshold' => $this->po_approval_threshold,
             'adjustment_approval_threshold' => $this->adjustment_approval_threshold,

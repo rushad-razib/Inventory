@@ -4,9 +4,11 @@ namespace App\Http\Resources;
 
 use App\Models\CashEntry;
 use App\Models\CustomerReturn;
+use App\Models\DrawerSession;
 use App\Models\Sale;
 use App\Models\SupplierRefundReceivable;
 use App\Models\SupplierSettlement;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -29,9 +31,12 @@ class CashEntryResource extends JsonResource
                 CustomerReturn::class => 'customer_return',
                 SupplierSettlement::class => 'supplier_settlement',
                 SupplierRefundReceivable::class => 'supplier_refund_receivable',
+                DrawerSession::class => 'drawer_session',
+                User::class => 'user',
                 default => $this->source_type,
             },
             'source_id' => $this->source_id,
+            'drawer_session_id' => $this->drawer_session_id,
             'actor_id' => $this->actor_id,
             'occurred_at' => $this->occurred_at?->toIso8601String(),
             'actor' => $this->actor === null ? null : [
