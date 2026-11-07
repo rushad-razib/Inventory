@@ -106,6 +106,7 @@ jobs:
           mkdir -p database
           touch database/database.sqlite
           php artisan migrate:fresh --seed --force --no-interaction
+          php artisan db:seed --class=DemoSeeder --force --no-interaction
       - name: Start API
         working-directory: apps/api
         run: |
