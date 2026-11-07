@@ -10,6 +10,7 @@ use App\Http\Requests\Suppliers\UpdateSupplierRequest;
 use App\Http\Resources\SupplierResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Supplier;
+use App\Services\DeletionGuard;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -66,6 +67,21 @@ class SupplierController extends Controller
         $supplier->update($this->enumPayload($request->validated()));
 
         return ApiResponse::data(new SupplierResource($supplier->refresh()));
+    }
+
+    public function destroy(Request $request, Supplier $supplier, DeletionGuard $guard): JsonResponse
+    {
+        if (! $request->user()->can('suppliers.manage')) {
+            return $this->forbidden('You do not have permission to delete suppliers.');
+        }
+
+        if ($detail = $guard->supplier($supplier)) {
+            return $this->conflict($detail);
+        }
+
+        $supplier->delete();
+
+        return ApiResponse::data(null);
     }
 
     /**

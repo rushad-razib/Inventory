@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { createDepartment, listDepartments } from "../lib/api";
+import { createDepartment, deleteDepartment, listDepartments } from "../lib/api";
 import styles from "./catalog.module.css";
 
 const schema = z.object({
@@ -14,7 +14,9 @@ type FormValues = z.infer<typeof schema>;
 
 export function DepartmentsPage() {
   const queryClient = useQueryClient();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const departmentsQuery = useQuery({
     queryKey: ["departments"],
@@ -41,6 +43,19 @@ export function DepartmentsPage() {
     onError: (err: Error) => setFormError(err.message),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteDepartment(selectedId!),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["departments"] });
+      setSelectedId(null);
+      setDeleteError(null);
+    },
+    onError: (err: Error) => setDeleteError(err.message),
+  });
+
+  const departments = departmentsQuery.data?.data ?? [];
+  const selected = departments.find((department) => department.id === selectedId) ?? null;
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
@@ -65,7 +80,16 @@ export function DepartmentsPage() {
               </thead>
               <tbody>
                 {departmentsQuery.data.data.map((department) => (
-                  <tr key={department.id}>
+                  <tr
+                    key={department.id}
+                    className={[styles.clickable, selectedId === department.id ? styles.selected : ""]
+                      .filter(Boolean)
+                      .join(" ")}
+                    onClick={() => {
+                      setDeleteError(null);
+                      setSelectedId(department.id);
+                    }}
+                  >
                     <td>{department.name}</td>
                   </tr>
                 ))}
@@ -93,6 +117,29 @@ export function DepartmentsPage() {
               {createMutation.isPending ? "Creating…" : "Create"}
             </button>
           </form>
+          {selected ? (
+            <div className={styles.form}>
+              <h2 className={styles.panelTitle}>Department detail</h2>
+              <p className={styles.subtitle}>{selected.name}</p>
+              {deleteError ? <p className={styles.error}>{deleteError}</p> : null}
+              <button
+                className={styles.buttonDanger}
+                type="button"
+                disabled={deleteMutation.isPending}
+                onClick={() => {
+                  if (!window.confirm(`Delete ${selected.name}?`)) {
+                    return;
+                  }
+                  setDeleteError(null);
+                  deleteMutation.mutate();
+                }}
+              >
+                {deleteMutation.isPending ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          ) : (
+            <p className={styles.muted}>Select a department to delete it.</p>
+          )}
         </section>
       </div>
     </div>

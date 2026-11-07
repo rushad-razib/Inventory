@@ -8,6 +8,7 @@ use App\Http\Requests\Departments\UpdateDepartmentRequest;
 use App\Http\Resources\DepartmentResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Department;
+use App\Services\DeletionGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -42,5 +43,20 @@ class DepartmentController extends Controller
         $department->update($request->validated());
 
         return ApiResponse::data(new DepartmentResource($department->refresh()));
+    }
+
+    public function destroy(Request $request, Department $department, DeletionGuard $guard): JsonResponse
+    {
+        if (! $request->user()->can('users.manage')) {
+            return $this->forbidden('You do not have permission to delete departments.');
+        }
+
+        if ($detail = $guard->department($department)) {
+            return $this->conflict($detail);
+        }
+
+        $department->delete();
+
+        return ApiResponse::data(null);
     }
 }

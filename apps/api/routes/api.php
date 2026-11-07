@@ -54,27 +54,32 @@ Route::prefix('v1')->group(function () {
         Route::get('/departments', [DepartmentController::class, 'index']);
         Route::post('/departments', [DepartmentController::class, 'store']);
         Route::patch('/departments/{department}', [DepartmentController::class, 'update']);
+        Route::delete('/departments/{department}', [DepartmentController::class, 'destroy']);
 
         Route::get('/warehouses', [WarehouseController::class, 'index']);
         Route::post('/warehouses', [WarehouseController::class, 'store']);
         Route::patch('/warehouses/{warehouse}', [WarehouseController::class, 'update']);
+        Route::delete('/warehouses/{warehouse}', [WarehouseController::class, 'destroy']);
 
         Route::get('/users', [UserController::class, 'index']);
         Route::post('/users', [UserController::class, 'store']);
         Route::get('/users/{user}', [UserController::class, 'show']);
         Route::patch('/users/{user}', [UserController::class, 'update']);
+        Route::delete('/users/{user}', [UserController::class, 'destroy']);
         Route::get('/users/{user}/images', [UserImageController::class, 'index']);
         Route::post('/users/{user}/images', [UserImageController::class, 'store']);
 
         Route::get('/categories', [CategoryController::class, 'index']);
         Route::post('/categories', [CategoryController::class, 'store']);
         Route::patch('/categories/{category}', [CategoryController::class, 'update']);
+        Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
 
         Route::get('/products/lookup', [ProductController::class, 'lookup']);
         Route::get('/products', [ProductController::class, 'index']);
         Route::post('/products', [ProductController::class, 'store']);
         Route::get('/products/{product}', [ProductController::class, 'show']);
         Route::patch('/products/{product}', [ProductController::class, 'update']);
+        Route::delete('/products/{product}', [ProductController::class, 'destroy']);
         Route::get('/products/{product}/images', [ProductImageController::class, 'index']);
         Route::post('/products/{product}/images', [ProductImageController::class, 'store']);
 
@@ -82,6 +87,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/suppliers', [SupplierController::class, 'store']);
         Route::get('/suppliers/{supplier}', [SupplierController::class, 'show']);
         Route::patch('/suppliers/{supplier}', [SupplierController::class, 'update']);
+        Route::delete('/suppliers/{supplier}', [SupplierController::class, 'destroy']);
         Route::get('/suppliers/{supplier}/products', [SupplierProductController::class, 'index']);
         Route::post('/suppliers/{supplier}/products', [SupplierProductController::class, 'store']);
         Route::patch('/supplier-products/{supplierProduct}', [SupplierProductController::class, 'update']);
@@ -91,6 +97,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/customers', [CustomerController::class, 'store']);
         Route::get('/customers/{customer}', [CustomerController::class, 'show']);
         Route::patch('/customers/{customer}', [CustomerController::class, 'update']);
+        Route::delete('/customers/{customer}', [CustomerController::class, 'destroy']);
         Route::get('/customers/{customer}/point-entries', [CustomerController::class, 'pointEntries']);
 
         Route::get('/stock-balances', [StockController::class, 'balances']);

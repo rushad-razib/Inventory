@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import {
   createProduct,
+  deleteProduct,
   listCategories,
   listProductImages,
   listProducts,
@@ -15,6 +16,8 @@ import {
   uploadProductImage,
   type Product,
 } from "../lib/api";
+import { generateBarcode, generateSku } from "../lib/codes";
+import { printProductSticker } from "../lib/sticker";
 import { useAuth } from "../lib/auth";
 import { can } from "../lib/permissions";
 import { formatTaka } from "../lib/money";
@@ -78,6 +81,8 @@ export function ProductsPage() {
   const [editError, setEditError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const canManage = can(user, "catalog.manage");
   const [searchParams] = useSearchParams();
   const q = searchParams.get("q") ?? "";
@@ -115,6 +120,7 @@ export function ProductsPage() {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -155,9 +161,33 @@ export function ProductsPage() {
       uploadProductImage(productId, file),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["products", selectedId, "images"] });
+      setPreviewUrl((current) => {
+        if (current) {
+          URL.revokeObjectURL(current);
+        }
+        return null;
+      });
       setUploadError(null);
     },
-    onError: (err: Error) => setUploadError(err.message),
+    onError: (err: Error) => {
+      setPreviewUrl((current) => {
+        if (current) {
+          URL.revokeObjectURL(current);
+        }
+        return null;
+      });
+      setUploadError(err.message);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteProduct(selectedId!),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["products"] });
+      setSelectedId(null);
+      setDeleteError(null);
+    },
+    onError: (err: Error) => setDeleteError(err.message),
   });
 
   const selected = productsQuery.data?.data.find((p) => p.id === selectedId) ?? null;
@@ -184,7 +214,19 @@ export function ProductsPage() {
     });
     setSaved(false);
     setEditError(null);
+    setDeleteError(null);
   }, [selected, editForm]);
+
+  useEffect(() => {
+    return () => {
+      setPreviewUrl((current) => {
+        if (current) {
+          URL.revokeObjectURL(current);
+        }
+        return null;
+      });
+    };
+  }, [selectedId]);
 
   const categoryName = (id: string | null) => categories.find((category) => category.id === id)?.name ?? "—";
   const supplierName = (id: string | null) => {
@@ -258,6 +300,11 @@ export function ProductsPage() {
                   errors={errors}
                   categories={categories}
                   suppliers={suppliers}
+                  generators={{
+                    sku: () => setValue("sku", generateSku(), { shouldDirty: true, shouldValidate: true }),
+                    barcode: () =>
+                      setValue("barcode", generateBarcode(), { shouldDirty: true, shouldValidate: true }),
+                  }}
                 />
                 {formError ? <p className={styles.error}>{formError}</p> : null}
                 <button className={styles.button} type="submit" disabled={isSubmitting || createMutation.isPending}>
@@ -273,6 +320,22 @@ export function ProductsPage() {
           {!selected ? <p className={styles.muted}>Select a product row.</p> : null}
           {selected ? (
             <>
+              <button
+                className={styles.buttonSecondary}
+                type="button"
+                disabled={!selected.barcode}
+                onClick={() => {
+                  if (selected.barcode) {
+                    printProductSticker({
+                      name: selected.name,
+                      sku: selected.sku,
+                      barcode: selected.barcode,
+                    });
+                  }
+                }}
+              >
+                Print sticker
+              </button>
               {canManage ? (
                 <form
                   className={styles.form}
@@ -297,6 +360,21 @@ export function ProductsPage() {
                   >
                     {updateMutation.isPending ? "Saving…" : "Save"}
                   </button>
+                  <button
+                    className={styles.buttonDanger}
+                    type="button"
+                    disabled={deleteMutation.isPending}
+                    onClick={() => {
+                      if (!window.confirm(`Delete ${selected.name}?`)) {
+                        return;
+                      }
+                      setDeleteError(null);
+                      deleteMutation.mutate();
+                    }}
+                  >
+                    {deleteMutation.isPending ? "Deleting…" : "Delete"}
+                  </button>
+                  {deleteError ? <p className={styles.error}>{deleteError}</p> : null}
                 </form>
               ) : (
                 <div className={styles.detailGrid}>
@@ -338,6 +416,7 @@ export function ProductsPage() {
               <h3 className={styles.panelTitle}>Images</h3>
               {imagesQuery.isLoading ? <p className={styles.muted}>Loading images…</p> : null}
               <div className={styles.images}>
+                {previewUrl ? <img className={styles.thumb} src={previewUrl} alt="" /> : null}
                 {(imagesQuery.data ?? []).map((image) => (
                   <img key={image.id} className={styles.thumb} src={image.url} alt="" />
                 ))}
@@ -360,6 +439,12 @@ export function ProductsPage() {
                         return;
                       }
                       setUploadError(null);
+                      setPreviewUrl((current) => {
+                        if (current) {
+                          URL.revokeObjectURL(current);
+                        }
+                        return URL.createObjectURL(file);
+                      });
                       uploadMutation.mutate({ productId: selectedId, file });
                     }}
                   />
@@ -379,17 +464,24 @@ function ProductFields({
   errors,
   categories,
   suppliers,
+  generators,
 }: {
   register: ReturnType<typeof useForm<FormValues>>["register"];
   errors: ReturnType<typeof useForm<FormValues>>["formState"]["errors"];
   categories: { id: string; name: string }[];
   suppliers: { id: string; name: string; code: string }[];
+  generators?: { sku: () => void; barcode: () => void };
 }) {
   return (
     <>
       <label className={styles.label}>
         SKU
         <input className={`${styles.input} mono`} {...register("sku")} />
+        {generators ? (
+          <button className={styles.buttonTiny} type="button" onClick={generators.sku}>
+            Generate
+          </button>
+        ) : null}
         {errors.sku ? <span className={styles.fieldError}>{errors.sku.message}</span> : null}
       </label>
       <label className={styles.label}>
@@ -400,6 +492,11 @@ function ProductFields({
       <label className={styles.label}>
         Barcode
         <input className={`${styles.input} mono`} {...register("barcode")} />
+        {generators ? (
+          <button className={styles.buttonTiny} type="button" onClick={generators.barcode}>
+            Generate
+          </button>
+        ) : null}
       </label>
       <label className={styles.label}>
         Description

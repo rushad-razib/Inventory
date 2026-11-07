@@ -315,6 +315,13 @@ export async function updateProduct(id: string, body: Partial<ProductInput>): Pr
   return payload.data as unknown as Product;
 }
 
+export async function deleteProduct(id: string): Promise<void> {
+  const { data, error, response } = await apiClient.DELETE("/v1/products/{product}", {
+    params: { path: { product: id } },
+  });
+  assertData(data, error, response.status);
+}
+
 export async function getProduct(id: string): Promise<Product> {
   const { data, error, response } = await apiClient.GET("/v1/products/{product}", {
     params: { path: { product: id } },
@@ -372,6 +379,13 @@ export async function updateCategory(
   return payload.data as unknown as Category;
 }
 
+export async function deleteCategory(id: string): Promise<void> {
+  const { data, error, response } = await apiClient.DELETE("/v1/categories/{category}", {
+    params: { path: { category: id } },
+  });
+  assertData(data, error, response.status);
+}
+
 export async function listWarehouses(): Promise<{ data: Warehouse[]; meta: PaginatedMeta }> {
   const { data, error, response } = await apiClient.GET("/v1/warehouses");
   const payload = assertData(data, error, response.status);
@@ -402,6 +416,13 @@ export async function updateWarehouse(id: string, body: Partial<WarehouseInput>)
   });
   const payload = assertData(data, error, response.status);
   return payload.data as unknown as Warehouse;
+}
+
+export async function deleteWarehouse(id: string): Promise<void> {
+  const { data, error, response } = await apiClient.DELETE("/v1/warehouses/{warehouse}", {
+    params: { path: { warehouse: id } },
+  });
+  assertData(data, error, response.status);
 }
 
 export async function listSuppliers(q?: string): Promise<{ data: Supplier[]; meta: PaginatedMeta }> {
@@ -442,6 +463,13 @@ export async function updateSupplier(id: string, body: Partial<SupplierInput>): 
   });
   const payload = assertData(data, error, response.status);
   return payload.data as unknown as Supplier;
+}
+
+export async function deleteSupplier(id: string): Promise<void> {
+  const { data, error, response } = await apiClient.DELETE("/v1/suppliers/{supplier}", {
+    params: { path: { supplier: id } },
+  });
+  assertData(data, error, response.status);
 }
 
 export async function listSupplierProducts(
@@ -489,6 +517,13 @@ export async function createCustomer(body: {
   return payload.data as unknown as Customer;
 }
 
+export async function deleteCustomer(id: string): Promise<void> {
+  const { data, error, response } = await apiClient.DELETE("/v1/customers/{customer}", {
+    params: { path: { customer: id } },
+  });
+  assertData(data, error, response.status);
+}
+
 export async function lookupCustomer(mobile: string): Promise<Customer | null> {
   const { data, error, response } = await apiClient.GET("/v1/customers/lookup", {
     params: { query: { mobile } },
@@ -531,6 +566,13 @@ export async function updateUser(id: string, body: Partial<UserInput>): Promise<
   return payload.data as unknown as CatalogUser;
 }
 
+export async function deleteUser(id: string): Promise<void> {
+  const { data, error, response } = await apiClient.DELETE("/v1/users/{user}", {
+    params: { path: { user: id } },
+  });
+  assertData(data, error, response.status);
+}
+
 export async function listUserImages(userId: string): Promise<ImageAsset[]> {
   const { data, error, response } = await apiClient.GET("/v1/users/{user}/images", {
     params: { path: { user: userId } },
@@ -566,6 +608,13 @@ export async function createDepartment(body: { name: string }): Promise<Departme
   const { data, error, response } = await apiClient.POST("/v1/departments", { body });
   const payload = assertData(data, error, response.status);
   return payload.data as unknown as Department;
+}
+
+export async function deleteDepartment(id: string): Promise<void> {
+  const { data, error, response } = await apiClient.DELETE("/v1/departments/{department}", {
+    params: { path: { department: id } },
+  });
+  assertData(data, error, response.status);
 }
 
 export async function fetchSettings(): Promise<CompanySettings> {

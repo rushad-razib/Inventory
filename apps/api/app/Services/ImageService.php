@@ -19,7 +19,7 @@ class ImageService
 
     public function attach(Model $imageable, UploadedFile $file, ?int $sortOrder = null): Image
     {
-        $disk = config('filesystems.default', 'local');
+        $disk = 'public';
         $directory = 'images/'.Str::of($imageable::class)->classBasename()->lower();
         $path = $file->store($directory, $disk);
 

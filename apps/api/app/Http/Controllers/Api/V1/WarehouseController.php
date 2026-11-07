@@ -8,6 +8,7 @@ use App\Http\Requests\Warehouses\UpdateWarehouseRequest;
 use App\Http\Resources\WarehouseResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Warehouse;
+use App\Services\DeletionGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -46,5 +47,20 @@ class WarehouseController extends Controller
         $warehouse->update($request->validated());
 
         return ApiResponse::data(new WarehouseResource($warehouse->refresh()));
+    }
+
+    public function destroy(Request $request, Warehouse $warehouse, DeletionGuard $guard): JsonResponse
+    {
+        if (! $request->user()->can('settings.manage')) {
+            return $this->forbidden('You do not have permission to delete warehouses.');
+        }
+
+        if ($detail = $guard->warehouse($warehouse)) {
+            return $this->conflict($detail);
+        }
+
+        $warehouse->delete();
+
+        return ApiResponse::data(null);
     }
 }

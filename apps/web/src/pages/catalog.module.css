@@ -194,6 +194,37 @@
   cursor: pointer;
 }
 
+.buttonSecondary:disabled,
+.buttonDanger:disabled,
+.buttonTiny:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.buttonTiny {
+  border: 1px solid var(--color-stone-line);
+  border-radius: var(--radius);
+  background: var(--color-stone-raised);
+  color: var(--color-ink);
+  padding: 0.2rem 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  justify-self: start;
+}
+
+.buttonDanger {
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-danger);
+  padding: 0.45rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  justify-self: start;
+}
+
 .error {
   margin: 0;
   color: var(--color-danger);

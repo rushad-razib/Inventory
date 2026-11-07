@@ -794,6 +794,97 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         422:
           $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: category.destroy
+      tags:
+        - Category
+      parameters:
+        -
+          name: category
+          in: path
+          required: true
+          description: 'The category ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        409:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/conflict
+                  title:
+                    type: string
+                    const: Conflict
+                  status:
+                    type: integer
+                    const: 409
+                  detail:
+                    type:
+                      - string
+                      - 'null'
+                    enum:
+                      - 'Cannot delete this category. Please edit/delete child categories before deleting this category.'
+                      - 'Cannot delete this category. Please edit/delete associated products before deleting this category.'
+                      - null
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to delete categories.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
   /v1/customers/lookup:
     get:
       operationId: customer.lookup
@@ -1128,6 +1219,96 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         422:
           $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: customer.destroy
+      tags:
+        - Customer
+      parameters:
+        -
+          name: customer
+          in: path
+          required: true
+          description: 'The customer ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        409:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/conflict
+                  title:
+                    type: string
+                    const: Conflict
+                  status:
+                    type: integer
+                    const: 409
+                  detail:
+                    type:
+                      - string
+                      - 'null'
+                    enum:
+                      - 'Cannot delete this customer. This customer has sales or point history.'
+                      - null
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to delete customers.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
   '/v1/customers/{customer}/point-entries':
     get:
       operationId: customer.pointEntries
@@ -1622,6 +1803,96 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         422:
           $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: department.destroy
+      tags:
+        - Department
+      parameters:
+        -
+          name: department
+          in: path
+          required: true
+          description: 'The department ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        409:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/conflict
+                  title:
+                    type: string
+                    const: Conflict
+                  status:
+                    type: integer
+                    const: 409
+                  detail:
+                    type:
+                      - string
+                      - 'null'
+                    enum:
+                      - 'Cannot delete this department. Please reassign associated users before deleting this department.'
+                      - null
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to delete departments.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
   /v1/drawers:
     get:
       operationId: drawer.index
@@ -2295,6 +2566,96 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         422:
           $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: product.destroy
+      tags:
+        - Product
+      parameters:
+        -
+          name: product
+          in: path
+          required: true
+          description: 'The product ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        409:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/conflict
+                  title:
+                    type: string
+                    const: Conflict
+                  status:
+                    type: integer
+                    const: 409
+                  detail:
+                    type:
+                      - string
+                      - 'null'
+                    enum:
+                      - 'Cannot delete this product. It has stock or transaction history.'
+                      - null
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to delete products.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
   '/v1/products/{product}/images':
     get:
       operationId: productImage.index
@@ -4035,6 +4396,97 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         422:
           $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: supplier.destroy
+      tags:
+        - Supplier
+      parameters:
+        -
+          name: supplier
+          in: path
+          required: true
+          description: 'The supplier ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        409:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/conflict
+                  title:
+                    type: string
+                    const: Conflict
+                  status:
+                    type: integer
+                    const: 409
+                  detail:
+                    type:
+                      - string
+                      - 'null'
+                    enum:
+                      - 'Cannot delete this supplier. This supplier has purchase or payment history.'
+                      - 'Cannot delete this supplier. Please edit/delete associated products before deleting this supplier.'
+                      - null
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to delete suppliers.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
   /v1/supplier-bills:
     get:
       operationId: supplierBill.index
@@ -5040,6 +5492,98 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         422:
           $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: user.destroy
+      tags:
+        - User
+      parameters:
+        -
+          name: user
+          in: path
+          required: true
+          description: 'The user ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        409:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/conflict
+                  title:
+                    type: string
+                    const: Conflict
+                  status:
+                    type: integer
+                    const: 409
+                  detail:
+                    type:
+                      - string
+                      - 'null'
+                    enum:
+                      - 'Cannot delete this user. This user has associated records.'
+                      - 'Cannot delete the last admin.'
+                      - 'Cannot delete your own user.'
+                      - null
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to delete users.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
   '/v1/users/{user}/images':
     get:
       operationId: userImage.index
@@ -5349,6 +5893,99 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         422:
           $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: warehouse.destroy
+      tags:
+        - Warehouse
+      parameters:
+        -
+          name: warehouse
+          in: path
+          required: true
+          description: 'The warehouse ID'
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
+        409:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/conflict
+                  title:
+                    type: string
+                    const: Conflict
+                  status:
+                    type: integer
+                    const: 409
+                  detail:
+                    type:
+                      - string
+                      - 'null'
+                    enum:
+                      - 'Cannot delete this warehouse. Set another warehouse as the default first.'
+                      - 'Cannot delete this warehouse. This warehouse has transfers, sales, or other records.'
+                      - 'Cannot delete this warehouse. Please reassign associated users before deleting this warehouse.'
+                      - 'Cannot delete this warehouse. There are products in this warehouse.'
+                      - null
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        403:
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: /problems/forbidden
+                  title:
+                    type: string
+                    const: Forbidden
+                  status:
+                    type: integer
+                    const: 403
+                  detail:
+                    type: string
+                    const: 'You do not have permission to delete warehouses.'
+                  errors:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - errors
+        404:
+          $ref: '#/components/responses/ModelNotFoundException'
+        401:
+          $ref: '#/components/responses/AuthenticationException'
 components:
   schemas:
     CloseDrawerRequest:

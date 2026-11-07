@@ -1,11 +1,15 @@
 <?php
 
 use App\Models\AuditLog;
+use App\Models\Category;
 use App\Models\CompanySetting;
 use App\Models\Customer;
+use App\Models\Department;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
+use App\Models\Supplier;
 use App\Models\User;
+use App\Models\Warehouse;
 use App\Services\ImageService;
 use Database\Seeders\DemoSeeder;
 use Database\Seeders\RolePermissionSeeder;
@@ -102,7 +106,7 @@ it('normalizes bangladesh mobiles and rejects foreign numbers', function () {
 });
 
 it('attaches images to products and users through ImageService', function () {
-    Storage::fake('local');
+    Storage::fake('public');
 
     $admin = User::factory()->create();
     $admin->assignRole('Admin');
@@ -119,7 +123,10 @@ it('attaches images to products and users through ImageService', function () {
         ->json('data');
 
     expect($productImage['id'])->not->toBeEmpty()
-        ->and($productImage['sort_order'])->toBe(1);
+        ->and($productImage['sort_order'])->toBe(1)
+        ->and($productImage['url'])->toStartWith('/storage/');
+
+    Storage::disk('public')->assertExists(ltrim(substr($productImage['url'], strlen('/storage/')), '/'));
 
     $userFile = UploadedFile::fake()->image('avatar.png', 80, 80);
 
@@ -269,4 +276,152 @@ it('searches products, suppliers, customers, and purchase orders', function () {
         ->assertOk()
         ->assertJsonPath('data.0.number', $order->number)
         ->assertJsonCount(1, 'data');
+});
+
+it('deletes unused catalog records and blocks records that still have associations', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('Admin');
+    $cashier = User::factory()->create();
+    $cashier->assignRole('Cashier');
+    app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+    $category = Category::query()->create(['name' => 'Seasonal']);
+    $this->actingAs($admin)
+        ->deleteJson('/api/v1/categories/'.$category->id)
+        ->assertOk()
+        ->assertJsonPath('data', null);
+    expect(Category::query()->whereKey($category->id)->exists())->toBeFalse();
+
+    $kitchen = Category::query()->where('name', 'Kitchen')->firstOrFail();
+    $this->actingAs($admin)
+        ->deleteJson('/api/v1/categories/'.$kitchen->id)
+        ->assertStatus(409)
+        ->assertJsonPath('detail', 'Cannot delete this category. Please edit/delete associated products before deleting this category.');
+    expect(Category::query()->whereKey($kitchen->id)->exists())->toBeTrue();
+
+    $parent = Category::query()->create(['name' => 'Season']);
+    Category::query()->create(['name' => 'Summer', 'parent_id' => $parent->id]);
+    $this->actingAs($admin)
+        ->deleteJson('/api/v1/categories/'.$parent->id)
+        ->assertStatus(409)
+        ->assertJsonPath('detail', 'Cannot delete this category. Please edit/delete child categories before deleting this category.');
+
+    $this->actingAs($cashier)
+        ->deleteJson('/api/v1/categories/'.$kitchen->id)
+        ->assertForbidden();
+
+    $supplierId = $this->actingAs($admin)
+        ->postJson('/api/v1/suppliers', [
+            'code' => 'TEMP-SUP',
+            'name' => 'Temp Supplier',
+            'supply_mode' => 'outright',
+            'status' => 'active',
+        ])
+        ->assertCreated()
+        ->json('data.id');
+
+    $this->actingAs($admin)
+        ->deleteJson('/api/v1/suppliers/'.$supplierId)
+        ->assertOk();
+    expect(Supplier::query()->whereKey($supplierId)->exists())->toBeFalse();
+
+    $hart = Supplier::query()->where('code', 'HART-MILL')->firstOrFail();
+    $this->actingAs($admin)
+        ->deleteJson('/api/v1/suppliers/'.$hart->id)
+        ->assertStatus(409)
+        ->assertJsonPath('detail', 'Cannot delete this supplier. Please edit/delete associated products before deleting this supplier.');
+    expect(Supplier::query()->whereKey($hart->id)->exists())->toBeTrue();
+
+    $warehouseId = $this->actingAs($admin)
+        ->postJson('/api/v1/warehouses', [
+            'code' => 'TEMP',
+            'name' => 'Temp Store',
+            'is_default' => false,
+            'is_active' => true,
+        ])
+        ->assertCreated()
+        ->json('data.id');
+
+    $this->actingAs($admin)
+        ->deleteJson('/api/v1/warehouses/'.$warehouseId)
+        ->assertOk();
+    expect(Warehouse::query()->whereKey($warehouseId)->exists())->toBeFalse();
+
+    $dc = Warehouse::query()->where('code', 'DC')->firstOrFail();
+    $this->actingAs($admin)
+        ->deleteJson('/api/v1/warehouses/'.$dc->id)
+        ->assertStatus(409)
+        ->assertJsonPath('detail', 'Cannot delete this warehouse. There are products in this warehouse.');
+    expect(Warehouse::query()->whereKey($dc->id)->exists())->toBeTrue();
+
+    $productId = $this->actingAs($admin)
+        ->postJson('/api/v1/products', [
+            'sku' => 'TEMP-001',
+            'name' => 'Temp Item',
+            'sell_price' => 10,
+        ])
+        ->assertCreated()
+        ->json('data.id');
+
+    $this->actingAs($admin)
+        ->deleteJson('/api/v1/products/'.$productId)
+        ->assertOk();
+    expect(Product::query()->whereKey($productId)->exists())->toBeFalse();
+
+    $mug = Product::query()->where('sku', 'MUG-001')->firstOrFail();
+    $this->actingAs($admin)
+        ->deleteJson('/api/v1/products/'.$mug->id)
+        ->assertStatus(409)
+        ->assertJsonPath('detail', 'Cannot delete this product. It has stock or transaction history.');
+
+    $departmentId = $this->actingAs($admin)
+        ->postJson('/api/v1/departments', [
+            'name' => 'Temp Dept',
+        ])
+        ->assertCreated()
+        ->json('data.id');
+
+    $this->actingAs($admin)
+        ->deleteJson('/api/v1/departments/'.$departmentId)
+        ->assertOk();
+    expect(Department::query()->whereKey($departmentId)->exists())->toBeFalse();
+
+    $store = Department::query()->where('name', 'Store')->firstOrFail();
+    $this->actingAs($admin)
+        ->deleteJson('/api/v1/departments/'.$store->id)
+        ->assertStatus(409)
+        ->assertJsonPath('detail', 'Cannot delete this department. Please reassign associated users before deleting this department.');
+
+    $customerId = $this->actingAs($admin)
+        ->postJson('/api/v1/customers', [
+            'mobile' => '01712349999',
+            'name' => 'Temp Customer',
+        ])
+        ->assertCreated()
+        ->json('data.id');
+
+    $this->actingAs($admin)
+        ->deleteJson('/api/v1/customers/'.$customerId)
+        ->assertOk();
+    expect(Customer::query()->whereKey($customerId)->exists())->toBeFalse();
+
+    $rahim = Customer::query()->where('mobile', '+8801711000001')->firstOrFail();
+    $this->actingAs($admin)
+        ->deleteJson('/api/v1/customers/'.$rahim->id)
+        ->assertStatus(409)
+        ->assertJsonPath('detail', 'Cannot delete this customer. This customer has sales or point history.');
+
+    $spare = User::factory()->create();
+    $spare->assignRole('Cashier');
+    app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+    $this->actingAs($admin)
+        ->deleteJson('/api/v1/users/'.$spare->id)
+        ->assertOk();
+    expect(User::query()->whereKey($spare->id)->exists())->toBeFalse();
+
+    $this->actingAs($admin)
+        ->deleteJson('/api/v1/users/'.$admin->id)
+        ->assertStatus(409)
+        ->assertJsonPath('detail', 'Cannot delete your own user.');
 });

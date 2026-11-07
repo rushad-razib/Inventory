@@ -254,7 +254,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["category.destroy"];
         options?: never;
         head?: never;
         patch: operations["category.update"];
@@ -302,7 +302,7 @@ export interface paths {
         get: operations["customer.show"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["customer.destroy"];
         options?: never;
         head?: never;
         patch: operations["customer.update"];
@@ -446,7 +446,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["department.destroy"];
         options?: never;
         head?: never;
         patch: operations["department.update"];
@@ -590,7 +590,7 @@ export interface paths {
         get: operations["product.show"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["product.destroy"];
         options?: never;
         head?: never;
         patch: operations["product.update"];
@@ -1054,7 +1054,7 @@ export interface paths {
         get: operations["supplier.show"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["supplier.destroy"];
         options?: never;
         head?: never;
         patch: operations["supplier.update"];
@@ -1326,7 +1326,7 @@ export interface paths {
         get: operations["user.show"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["user.destroy"];
         options?: never;
         head?: never;
         patch: operations["user.update"];
@@ -1374,7 +1374,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["warehouse.destroy"];
         options?: never;
         head?: never;
         patch: operations["warehouse.update"];
@@ -2403,6 +2403,69 @@ export interface operations {
             422: components["responses"]["ValidationException"];
         };
     };
+    "category.destroy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The category ID */
+                category: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/forbidden";
+                        /** @constant */
+                        title: "Forbidden";
+                        /** @constant */
+                        status: 403;
+                        /** @constant */
+                        detail: "You do not have permission to delete categories.";
+                        errors: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/conflict";
+                        /** @constant */
+                        title: "Conflict";
+                        /** @constant */
+                        status: 409;
+                        /** @enum {string|null} */
+                        detail: "Cannot delete this category. Please edit/delete child categories before deleting this category." | "Cannot delete this category. Please edit/delete associated products before deleting this category." | null;
+                        errors: string;
+                    };
+                };
+            };
+        };
+    };
     "category.update": {
         parameters: {
             query?: never;
@@ -2656,6 +2719,69 @@ export interface operations {
                 };
             };
             404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "customer.destroy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The customer ID */
+                customer: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/forbidden";
+                        /** @constant */
+                        title: "Forbidden";
+                        /** @constant */
+                        status: 403;
+                        /** @constant */
+                        detail: "You do not have permission to delete customers.";
+                        errors: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/conflict";
+                        /** @constant */
+                        title: "Conflict";
+                        /** @constant */
+                        status: 409;
+                        /** @enum {string|null} */
+                        detail: "Cannot delete this customer. This customer has sales or point history." | null;
+                        errors: string;
+                    };
+                };
+            };
         };
     };
     "customer.update": {
@@ -3049,6 +3175,69 @@ export interface operations {
                 };
             };
             422: components["responses"]["ValidationException"];
+        };
+    };
+    "department.destroy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The department ID */
+                department: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/forbidden";
+                        /** @constant */
+                        title: "Forbidden";
+                        /** @constant */
+                        status: 403;
+                        /** @constant */
+                        detail: "You do not have permission to delete departments.";
+                        errors: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/conflict";
+                        /** @constant */
+                        title: "Conflict";
+                        /** @constant */
+                        status: 409;
+                        /** @enum {string|null} */
+                        detail: "Cannot delete this department. Please reassign associated users before deleting this department." | null;
+                        errors: string;
+                    };
+                };
+            };
         };
     };
     "department.update": {
@@ -3587,6 +3776,69 @@ export interface operations {
                 };
             };
             404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "product.destroy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The product ID */
+                product: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/forbidden";
+                        /** @constant */
+                        title: "Forbidden";
+                        /** @constant */
+                        status: 403;
+                        /** @constant */
+                        detail: "You do not have permission to delete products.";
+                        errors: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/conflict";
+                        /** @constant */
+                        title: "Conflict";
+                        /** @constant */
+                        status: 409;
+                        /** @enum {string|null} */
+                        detail: "Cannot delete this product. It has stock or transaction history." | null;
+                        errors: string;
+                    };
+                };
+            };
         };
     };
     "product.update": {
@@ -4990,6 +5242,69 @@ export interface operations {
             404: components["responses"]["ModelNotFoundException"];
         };
     };
+    "supplier.destroy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The supplier ID */
+                supplier: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/forbidden";
+                        /** @constant */
+                        title: "Forbidden";
+                        /** @constant */
+                        status: 403;
+                        /** @constant */
+                        detail: "You do not have permission to delete suppliers.";
+                        errors: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/conflict";
+                        /** @constant */
+                        title: "Conflict";
+                        /** @constant */
+                        status: 409;
+                        /** @enum {string|null} */
+                        detail: "Cannot delete this supplier. This supplier has purchase or payment history." | "Cannot delete this supplier. Please edit/delete associated products before deleting this supplier." | null;
+                        errors: string;
+                    };
+                };
+            };
+        };
+    };
     "supplier.update": {
         parameters: {
             query?: never;
@@ -5794,6 +6109,69 @@ export interface operations {
             404: components["responses"]["ModelNotFoundException"];
         };
     };
+    "user.destroy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The user ID */
+                user: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/forbidden";
+                        /** @constant */
+                        title: "Forbidden";
+                        /** @constant */
+                        status: 403;
+                        /** @constant */
+                        detail: "You do not have permission to delete users.";
+                        errors: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/conflict";
+                        /** @constant */
+                        title: "Conflict";
+                        /** @constant */
+                        status: 409;
+                        /** @enum {string|null} */
+                        detail: "Cannot delete this user. This user has associated records." | "Cannot delete the last admin." | "Cannot delete your own user." | null;
+                        errors: string;
+                    };
+                };
+            };
+        };
+    };
     "user.update": {
         parameters: {
             query?: never;
@@ -6029,6 +6407,69 @@ export interface operations {
                 };
             };
             422: components["responses"]["ValidationException"];
+        };
+    };
+    "warehouse.destroy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The warehouse ID */
+                warehouse: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: string;
+                        meta: string;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/forbidden";
+                        /** @constant */
+                        title: "Forbidden";
+                        /** @constant */
+                        status: 403;
+                        /** @constant */
+                        detail: "You do not have permission to delete warehouses.";
+                        errors: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @constant */
+                        type: "/problems/conflict";
+                        /** @constant */
+                        title: "Conflict";
+                        /** @constant */
+                        status: 409;
+                        /** @enum {string|null} */
+                        detail: "Cannot delete this warehouse. Set another warehouse as the default first." | "Cannot delete this warehouse. This warehouse has transfers, sales, or other records." | "Cannot delete this warehouse. Please reassign associated users before deleting this warehouse." | "Cannot delete this warehouse. There are products in this warehouse." | null;
+                        errors: string;
+                    };
+                };
+            };
         };
     };
     "warehouse.update": {

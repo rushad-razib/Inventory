@@ -21,6 +21,16 @@ abstract class Controller
         );
     }
 
+    protected function conflict(string $detail): JsonResponse
+    {
+        return ProblemResponse::make(
+            'conflict',
+            'Conflict',
+            409,
+            $detail,
+        );
+    }
+
     protected function perPage(Request $request): int
     {
         return min(100, max(1, (int) $request->integer('per_page', 25)));

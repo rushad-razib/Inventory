@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { createCustomer, listCustomers, lookupCustomer, type Customer } from "../lib/api";
+import { createCustomer, deleteCustomer, listCustomers, lookupCustomer, type Customer } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { can } from "../lib/permissions";
 import { EmptyState } from "./EmptyState";
@@ -25,7 +25,9 @@ type LookupForm = z.infer<typeof lookupSchema>;
 export function CustomersPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [lookupResult, setLookupResult] = useState<Customer | null | undefined>(undefined);
   const canManage = can(user, "customers.manage");
@@ -58,6 +60,18 @@ export function CustomersPage() {
     },
     onError: (err: Error) => setFormError(err.message),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteCustomer(selectedId!),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["customers"] });
+      setSelectedId(null);
+      setDeleteError(null);
+    },
+    onError: (err: Error) => setDeleteError(err.message),
+  });
+
+  const selected = customersQuery.data?.data.find((customer) => customer.id === selectedId) ?? null;
 
   return (
     <div className={styles.page}>
@@ -138,7 +152,16 @@ export function CustomersPage() {
                   </thead>
                   <tbody>
                     {customersQuery.data.data.map((customer) => (
-                      <tr key={customer.id}>
+                      <tr
+                        key={customer.id}
+                        className={[styles.clickable, selectedId === customer.id ? styles.selected : ""]
+                          .filter(Boolean)
+                          .join(" ")}
+                        onClick={() => {
+                          setDeleteError(null);
+                          setSelectedId(customer.id);
+                        }}
+                      >
                         <td className="mono">{customer.mobile}</td>
                         <td>{customer.name ?? "—"}</td>
                         <td className={`mono ${styles.money}`}>{customer.points_balance}</td>
@@ -154,6 +177,38 @@ export function CustomersPage() {
 
           {canManage ? (
             <section className={styles.panel}>
+              {selected ? (
+                <div className={styles.form}>
+                  <h2 className={styles.panelTitle}>Customer detail</h2>
+                  <div className={styles.detailGrid}>
+                    <div className={styles.detailRow}>
+                      <span className={styles.detailLabel}>Mobile</span>
+                      <span className="mono">{selected.mobile}</span>
+                    </div>
+                    <div className={styles.detailRow}>
+                      <span className={styles.detailLabel}>Name</span>
+                      <span>{selected.name ?? "—"}</span>
+                    </div>
+                  </div>
+                  {deleteError ? <p className={styles.error}>{deleteError}</p> : null}
+                  <button
+                    className={styles.buttonDanger}
+                    type="button"
+                    disabled={deleteMutation.isPending}
+                    onClick={() => {
+                      if (!window.confirm(`Delete ${selected.name ?? selected.mobile}?`)) {
+                        return;
+                      }
+                      setDeleteError(null);
+                      deleteMutation.mutate();
+                    }}
+                  >
+                    {deleteMutation.isPending ? "Deleting…" : "Delete"}
+                  </button>
+                </div>
+              ) : (
+                <p className={styles.muted}>Select a customer to delete it.</p>
+              )}
               <h2 className={styles.panelTitle}>Create customer</h2>
               <form
                 className={styles.form}

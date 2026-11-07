@@ -7,6 +7,7 @@ import {
   createUser,
   listDepartments,
   listUserImages,
+  deleteUser,
   listUsers,
   listWarehouses,
   updateUser,
@@ -41,6 +42,7 @@ export function UsersPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -147,6 +149,16 @@ export function UsersPage() {
     onError: (err: Error) => setUploadError(err.message),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteUser(selectedId!),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      setSelectedId(null);
+      setDeleteError(null);
+    },
+    onError: (err: Error) => setDeleteError(err.message),
+  });
+
   const selected = usersQuery.data?.data.find((u: CatalogUser) => u.id === selectedId) ?? null;
   const departments = departmentsQuery.data?.data ?? [];
   const warehouses = warehousesQuery.data?.data ?? [];
@@ -167,6 +179,7 @@ export function UsersPage() {
     });
     setSaved(false);
     setEditError(null);
+    setDeleteError(null);
   }, [selected, editForm]);
 
   return (
@@ -280,6 +293,21 @@ export function UsersPage() {
                 >
                   {updateMutation.isPending ? "Saving…" : "Save"}
                 </button>
+                <button
+                  className={styles.buttonDanger}
+                  type="button"
+                  disabled={deleteMutation.isPending}
+                  onClick={() => {
+                    if (!window.confirm(`Delete ${selected.name}?`)) {
+                      return;
+                    }
+                    setDeleteError(null);
+                    deleteMutation.mutate();
+                  }}
+                >
+                  {deleteMutation.isPending ? "Deleting…" : "Delete"}
+                </button>
+                {deleteError ? <p className={styles.error}>{deleteError}</p> : null}
               </form>
 
               <h3 className={styles.panelTitle}>Images</h3>

@@ -8,6 +8,7 @@ use App\Http\Requests\Categories\UpdateCategoryRequest;
 use App\Http\Resources\CategoryResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Category;
+use App\Services\DeletionGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -42,5 +43,20 @@ class CategoryController extends Controller
         $category->update($request->validated());
 
         return ApiResponse::data(new CategoryResource($category->refresh()));
+    }
+
+    public function destroy(Request $request, Category $category, DeletionGuard $guard): JsonResponse
+    {
+        if (! $request->user()->can('catalog.manage')) {
+            return $this->forbidden('You do not have permission to delete categories.');
+        }
+
+        if ($detail = $guard->category($category)) {
+            return $this->conflict($detail);
+        }
+
+        $category->delete();
+
+        return ApiResponse::data(null);
     }
 }

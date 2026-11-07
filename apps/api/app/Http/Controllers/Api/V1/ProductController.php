@@ -9,6 +9,7 @@ use App\Http\Resources\ProductResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Product;
 use App\Services\AuditLogger;
+use App\Services\DeletionGuard;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -81,6 +82,21 @@ class ProductController extends Controller
         }
 
         return ApiResponse::data(new ProductResource($product->refresh()));
+    }
+
+    public function destroy(Request $request, Product $product, DeletionGuard $guard): JsonResponse
+    {
+        if (! $request->user()->can('catalog.manage')) {
+            return $this->forbidden('You do not have permission to delete products.');
+        }
+
+        if ($detail = $guard->product($product)) {
+            return $this->conflict($detail);
+        }
+
+        $product->delete();
+
+        return ApiResponse::data(null);
     }
 
     public function lookup(Request $request): JsonResponse

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createCategory, listCategories, updateCategory } from "../lib/api";
+import { createCategory, deleteCategory, listCategories, updateCategory } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { can } from "../lib/permissions";
 import styles from "./catalog.module.css";
@@ -21,6 +21,7 @@ export function CategoriesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const canManage = can(user, "catalog.manage");
 
@@ -71,6 +72,16 @@ export function CategoriesPage() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteCategory(selectedId!),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["categories"] });
+      setSelectedId(null);
+      setDeleteError(null);
+    },
+    onError: (err: Error) => setDeleteError(err.message),
+  });
+
   const onSubmit = handleSubmit((values) => {
     setFormError(null);
     createMutation.mutate({ name: values.name, parent_id: values.parent_id || null });
@@ -90,6 +101,7 @@ export function CategoriesPage() {
     });
     setSaved(false);
     setEditError(null);
+    setDeleteError(null);
   }, [selected, editForm]);
 
   return (
@@ -190,6 +202,21 @@ export function CategoriesPage() {
                 <button className={styles.button} type="submit" disabled={updateMutation.isPending}>
                   {updateMutation.isPending ? "Saving…" : "Save"}
                 </button>
+                <button
+                  className={styles.buttonDanger}
+                  type="button"
+                  disabled={deleteMutation.isPending}
+                  onClick={() => {
+                    if (!window.confirm(`Delete ${selected.name}?`)) {
+                      return;
+                    }
+                    setDeleteError(null);
+                    deleteMutation.mutate();
+                  }}
+                >
+                  {deleteMutation.isPending ? "Deleting…" : "Delete"}
+                </button>
+                {deleteError ? <p className={styles.error}>{deleteError}</p> : null}
               </form>
             ) : null}
           </section>

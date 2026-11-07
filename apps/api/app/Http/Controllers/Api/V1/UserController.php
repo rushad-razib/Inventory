@@ -8,6 +8,7 @@ use App\Http\Requests\Users\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
+use App\Services\DeletionGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -73,5 +74,23 @@ class UserController extends Controller
         }
 
         return ApiResponse::data(new UserResource($user->refresh()->loadMissing('roles', 'permissions', 'department')));
+    }
+
+    public function destroy(Request $request, User $user, DeletionGuard $guard): JsonResponse
+    {
+        if (! $request->user()->can('users.manage')) {
+            return $this->forbidden('You do not have permission to delete users.');
+        }
+
+        if ($detail = $guard->user($user, $request->user())) {
+            return $this->conflict($detail);
+        }
+
+        $user->tokens()->delete();
+        $user->syncRoles([]);
+        $user->syncPermissions([]);
+        $user->delete();
+
+        return ApiResponse::data(null);
     }
 }

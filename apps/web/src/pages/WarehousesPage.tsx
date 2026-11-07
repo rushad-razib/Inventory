@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createWarehouse, listWarehouses, updateWarehouse, type Warehouse } from "../lib/api";
+import { createWarehouse, deleteWarehouse, listWarehouses, updateWarehouse, type Warehouse } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { can } from "../lib/permissions";
 import styles from "./catalog.module.css";
@@ -24,6 +24,7 @@ export function WarehousesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const canCreate = can(user, "settings.manage");
 
@@ -77,6 +78,16 @@ export function WarehousesPage() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteWarehouse(selectedId!),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["warehouses"] });
+      setSelectedId(null);
+      setDeleteError(null);
+    },
+    onError: (err: Error) => setDeleteError(err.message),
+  });
+
   const selected = warehousesQuery.data?.data.find((warehouse: Warehouse) => warehouse.id === selectedId) ?? null;
 
   useEffect(() => {
@@ -92,6 +103,7 @@ export function WarehousesPage() {
     });
     setSaved(false);
     setEditError(null);
+    setDeleteError(null);
   }, [selected, editForm]);
 
   const onSubmit = handleSubmit((values) => {
@@ -218,6 +230,21 @@ export function WarehousesPage() {
                 <button className={styles.button} type="submit" disabled={updateMutation.isPending}>
                   {updateMutation.isPending ? "Saving…" : "Save"}
                 </button>
+                <button
+                  className={styles.buttonDanger}
+                  type="button"
+                  disabled={deleteMutation.isPending}
+                  onClick={() => {
+                    if (!window.confirm(`Delete ${selected.name}?`)) {
+                      return;
+                    }
+                    setDeleteError(null);
+                    deleteMutation.mutate();
+                  }}
+                >
+                  {deleteMutation.isPending ? "Deleting…" : "Delete"}
+                </button>
+                {deleteError ? <p className={styles.error}>{deleteError}</p> : null}
               </form>
             ) : (
               <p className={styles.muted}>Select a warehouse to edit it.</p>

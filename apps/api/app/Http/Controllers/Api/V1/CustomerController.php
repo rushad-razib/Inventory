@@ -11,6 +11,7 @@ use App\Http\Responses\ApiResponse;
 use App\Http\Responses\ProblemResponse;
 use App\Models\Customer;
 use App\Models\CustomerPointEntry;
+use App\Services\DeletionGuard;
 use App\Support\BdMobile;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
@@ -71,6 +72,21 @@ class CustomerController extends Controller
         $customer->update($request->validated());
 
         return ApiResponse::data(new CustomerResource($customer->refresh()));
+    }
+
+    public function destroy(Request $request, Customer $customer, DeletionGuard $guard): JsonResponse
+    {
+        if (! $request->user()->can('customers.manage')) {
+            return $this->forbidden('You do not have permission to delete customers.');
+        }
+
+        if ($detail = $guard->customer($customer)) {
+            return $this->conflict($detail);
+        }
+
+        $customer->delete();
+
+        return ApiResponse::data(null);
     }
 
     public function lookup(Request $request): JsonResponse
