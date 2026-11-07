@@ -14,10 +14,12 @@ use App\Models\StockLot;
 use App\Models\SupplierBill;
 use App\Models\User;
 use App\Models\Warehouse;
-use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\DemoSeeder;
+use Database\Seeders\RolePermissionSeeder;
 
 it('seeds the hart and field scenes without a completed sale', function () {
-    $this->seed(DatabaseSeeder::class);
+    $this->seed(RolePermissionSeeder::class);
+    $this->seed(DemoSeeder::class);
 
     $rahim = Customer::query()->where('mobile', '+8801711000001')->firstOrFail();
     $nameless = Customer::query()->where('mobile', '+8801711000002')->firstOrFail();

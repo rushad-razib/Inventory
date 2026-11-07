@@ -4,6 +4,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { createDepartment, deleteDepartment, listDepartments } from "../lib/api";
+import { confirmDelete, showWarning } from "../lib/dialogs";
 import styles from "./catalog.module.css";
 
 const schema = z.object({
@@ -16,7 +17,6 @@ export function DepartmentsPage() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const departmentsQuery = useQuery({
     queryKey: ["departments"],
@@ -48,9 +48,10 @@ export function DepartmentsPage() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["departments"] });
       setSelectedId(null);
-      setDeleteError(null);
     },
-    onError: (err: Error) => setDeleteError(err.message),
+    onError: (err: Error) => {
+      void showWarning(err.message);
+    },
   });
 
   const departments = departmentsQuery.data?.data ?? [];
@@ -85,10 +86,7 @@ export function DepartmentsPage() {
                     className={[styles.clickable, selectedId === department.id ? styles.selected : ""]
                       .filter(Boolean)
                       .join(" ")}
-                    onClick={() => {
-                      setDeleteError(null);
-                      setSelectedId(department.id);
-                    }}
+                    onClick={() => setSelectedId(department.id)}
                   >
                     <td>{department.name}</td>
                   </tr>
@@ -121,16 +119,14 @@ export function DepartmentsPage() {
             <div className={styles.form}>
               <h2 className={styles.panelTitle}>Department detail</h2>
               <p className={styles.subtitle}>{selected.name}</p>
-              {deleteError ? <p className={styles.error}>{deleteError}</p> : null}
               <button
                 className={styles.buttonDanger}
                 type="button"
                 disabled={deleteMutation.isPending}
-                onClick={() => {
-                  if (!window.confirm(`Delete ${selected.name}?`)) {
+                onClick={async () => {
+                  if (!(await confirmDelete(selected.name))) {
                     return;
                   }
-                  setDeleteError(null);
                   deleteMutation.mutate();
                 }}
               >

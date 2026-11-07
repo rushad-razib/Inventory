@@ -17,6 +17,7 @@ import {
   type Product,
 } from "../lib/api";
 import { generateBarcode, generateSku } from "../lib/codes";
+import { confirmDelete, showWarning } from "../lib/dialogs";
 import { printProductSticker } from "../lib/sticker";
 import { useAuth } from "../lib/auth";
 import { can } from "../lib/permissions";
@@ -81,7 +82,6 @@ export function ProductsPage() {
   const [editError, setEditError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const canManage = can(user, "catalog.manage");
   const [searchParams] = useSearchParams();
@@ -185,9 +185,10 @@ export function ProductsPage() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["products"] });
       setSelectedId(null);
-      setDeleteError(null);
     },
-    onError: (err: Error) => setDeleteError(err.message),
+    onError: (err: Error) => {
+      void showWarning(err.message);
+    },
   });
 
   const selected = productsQuery.data?.data.find((p) => p.id === selectedId) ?? null;
@@ -214,7 +215,6 @@ export function ProductsPage() {
     });
     setSaved(false);
     setEditError(null);
-    setDeleteError(null);
   }, [selected, editForm]);
 
   useEffect(() => {
@@ -364,17 +364,15 @@ export function ProductsPage() {
                     className={styles.buttonDanger}
                     type="button"
                     disabled={deleteMutation.isPending}
-                    onClick={() => {
-                      if (!window.confirm(`Delete ${selected.name}?`)) {
+                    onClick={async () => {
+                      if (!(await confirmDelete(selected.name))) {
                         return;
                       }
-                      setDeleteError(null);
                       deleteMutation.mutate();
                     }}
                   >
                     {deleteMutation.isPending ? "Deleting…" : "Delete"}
                   </button>
-                  {deleteError ? <p className={styles.error}>{deleteError}</p> : null}
                 </form>
               ) : (
                 <div className={styles.detailGrid}>

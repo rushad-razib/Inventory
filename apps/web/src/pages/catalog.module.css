@@ -5,9 +5,11 @@
 
 .header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: baseline;
   gap: 1rem;
+  min-width: 0;
 }
 
 .title {
@@ -24,6 +26,7 @@
 
 .tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.25rem;
   border-bottom: 1px solid var(--color-stone-line);
 }
@@ -59,6 +62,10 @@
   align-items: start;
 }
 
+.split > * {
+  min-width: 0;
+}
+
 @media (max-width: 960px) {
   .split {
     grid-template-columns: 1fr;
@@ -66,6 +73,7 @@
 }
 
 .panel {
+  min-width: 0;
   background: var(--color-stone-raised);
   border: 1px solid var(--color-stone-line);
   border-radius: calc(var(--radius) + 1px);
@@ -80,6 +88,7 @@
 }
 
 .tableWrap {
+  min-width: 0;
   overflow: auto;
   max-height: min(70vh, 640px);
   border: 1px solid var(--color-stone-line);
@@ -131,11 +140,14 @@
 .form {
   display: grid;
   gap: 0.65rem;
+  min-width: 0;
 }
 
 .label {
   display: grid;
   gap: 0.3rem;
+  min-width: 0;
+  max-width: 100%;
   font-size: 0.82rem;
   font-weight: 500;
 }
@@ -150,6 +162,9 @@
 
 .input,
 .select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   border: 1px solid var(--color-stone-line);
   border-radius: var(--radius);
   padding: 0.5rem 0.6rem;
@@ -252,8 +267,13 @@
 
 .detailRow {
   display: grid;
-  grid-template-columns: 7rem 1fr;
+  grid-template-columns: 7rem minmax(0, 1fr);
   gap: 0.5rem;
+}
+
+.detailRow > :last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .detailLabel {
@@ -279,6 +299,7 @@
 .stack {
   display: grid;
   gap: 1rem;
+  min-width: 0;
 }
 
 .list {
@@ -306,6 +327,10 @@
   flex-wrap: wrap;
   gap: 0.75rem;
   align-items: end;
+}
+
+.toolbar .label {
+  flex: 1 1 12rem;
 }
 
 .actions {
@@ -407,6 +432,12 @@
 
 @media (max-width: 800px) {
   .till {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .lineRow {
     grid-template-columns: 1fr;
   }
 }

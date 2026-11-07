@@ -5,6 +5,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { createCustomer, deleteCustomer, listCustomers, lookupCustomer, type Customer } from "../lib/api";
+import { confirmDelete, showWarning } from "../lib/dialogs";
 import { useAuth } from "../lib/auth";
 import { can } from "../lib/permissions";
 import { EmptyState } from "./EmptyState";
@@ -27,7 +28,6 @@ export function CustomersPage() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [lookupResult, setLookupResult] = useState<Customer | null | undefined>(undefined);
   const canManage = can(user, "customers.manage");
@@ -66,9 +66,10 @@ export function CustomersPage() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["customers"] });
       setSelectedId(null);
-      setDeleteError(null);
     },
-    onError: (err: Error) => setDeleteError(err.message),
+    onError: (err: Error) => {
+      void showWarning(err.message);
+    },
   });
 
   const selected = customersQuery.data?.data.find((customer) => customer.id === selectedId) ?? null;
@@ -157,10 +158,7 @@ export function CustomersPage() {
                         className={[styles.clickable, selectedId === customer.id ? styles.selected : ""]
                           .filter(Boolean)
                           .join(" ")}
-                        onClick={() => {
-                          setDeleteError(null);
-                          setSelectedId(customer.id);
-                        }}
+                        onClick={() => setSelectedId(customer.id)}
                       >
                         <td className="mono">{customer.mobile}</td>
                         <td>{customer.name ?? "—"}</td>
@@ -190,16 +188,14 @@ export function CustomersPage() {
                       <span>{selected.name ?? "—"}</span>
                     </div>
                   </div>
-                  {deleteError ? <p className={styles.error}>{deleteError}</p> : null}
                   <button
                     className={styles.buttonDanger}
                     type="button"
                     disabled={deleteMutation.isPending}
-                    onClick={() => {
-                      if (!window.confirm(`Delete ${selected.name ?? selected.mobile}?`)) {
+                    onClick={async () => {
+                      if (!(await confirmDelete(selected.name ?? selected.mobile))) {
                         return;
                       }
-                      setDeleteError(null);
                       deleteMutation.mutate();
                     }}
                   >

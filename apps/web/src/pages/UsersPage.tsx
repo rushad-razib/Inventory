@@ -14,6 +14,7 @@ import {
   uploadUserImage,
   type CatalogUser,
 } from "../lib/api";
+import { confirmDelete, showWarning } from "../lib/dialogs";
 import { PasswordInput } from "../components/PasswordInput";
 import styles from "./catalog.module.css";
 
@@ -42,7 +43,6 @@ export function UsersPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -154,9 +154,10 @@ export function UsersPage() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["users"] });
       setSelectedId(null);
-      setDeleteError(null);
     },
-    onError: (err: Error) => setDeleteError(err.message),
+    onError: (err: Error) => {
+      void showWarning(err.message);
+    },
   });
 
   const selected = usersQuery.data?.data.find((u: CatalogUser) => u.id === selectedId) ?? null;
@@ -179,7 +180,6 @@ export function UsersPage() {
     });
     setSaved(false);
     setEditError(null);
-    setDeleteError(null);
   }, [selected, editForm]);
 
   return (
@@ -297,17 +297,15 @@ export function UsersPage() {
                   className={styles.buttonDanger}
                   type="button"
                   disabled={deleteMutation.isPending}
-                  onClick={() => {
-                    if (!window.confirm(`Delete ${selected.name}?`)) {
+                  onClick={async () => {
+                    if (!(await confirmDelete(selected.name))) {
                       return;
                     }
-                    setDeleteError(null);
                     deleteMutation.mutate();
                   }}
                 >
                   {deleteMutation.isPending ? "Deleting…" : "Delete"}
                 </button>
-                {deleteError ? <p className={styles.error}>{deleteError}</p> : null}
               </form>
 
               <h3 className={styles.panelTitle}>Images</h3>
