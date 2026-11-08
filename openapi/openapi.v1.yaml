@@ -306,6 +306,26 @@ paths:
                   - meta
         422:
           $ref: '#/components/responses/ValidationException'
+  /v1/demo-logins:
+    get:
+      operationId: auth.demoLogins
+      tags:
+        - Auth
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - data
+                  - meta
   /v1/auth/logout:
     post:
       operationId: auth.logout
