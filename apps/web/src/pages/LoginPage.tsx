@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -5,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { BrandMark } from "../components/BrandMark";
 import { PasswordInput } from "../components/PasswordInput";
+import { listDemoLogins } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useBranding } from "../lib/branding";
 import styles from "./LoginPage.module.css";
@@ -21,9 +23,11 @@ export function LoginPage() {
   const { data: branding } = useBranding();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const loginsQuery = useQuery({ queryKey: ["demo-logins"], queryFn: listDemoLogins });
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -75,6 +79,37 @@ export function LoginPage() {
           {isSubmitting ? "Signing in…" : "Sign in"}
         </button>
       </form>
+
+      <section className={styles.roster} aria-label="Demo accounts">
+        <h2 className={styles.rosterTitle}>Demo accounts</h2>
+        {loginsQuery.isLoading ? <p className={styles.rosterMuted}>Loading accounts…</p> : null}
+        {loginsQuery.isError ? <p className={styles.error}>Could not load accounts.</p> : null}
+        {loginsQuery.data ? (
+          <ul className={styles.rosterList}>
+            {loginsQuery.data.map((account) => (
+              <li key={account.email}>
+                <button
+                  className={styles.rosterRow}
+                  type="button"
+                  onClick={() => {
+                    setValue("email", account.email, { shouldValidate: true });
+                    setValue("password", account.password ?? "", { shouldValidate: true });
+                  }}
+                >
+                  <span className={styles.rosterName}>{account.name}</span>
+                  <span className={styles.rosterMeta}>
+                    {[account.role, account.warehouse].filter(Boolean).join(" · ")}
+                  </span>
+                  <span className={styles.rosterEmail}>{account.email}</span>
+                  <span className={styles.rosterPassword}>
+                    {account.password ?? "Password changed"}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </section>
     </div>
   );
 }

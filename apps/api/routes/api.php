@@ -34,6 +34,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('web');
+    Route::get('/demo-logins', [AuthController::class, 'demoLogins']);
     Route::get('/branding', [SettingsController::class, 'branding']);
 
     Route::middleware(['auth:sanctum'])->group(function () {

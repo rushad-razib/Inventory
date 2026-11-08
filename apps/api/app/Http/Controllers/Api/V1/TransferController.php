@@ -32,6 +32,14 @@ class TransferController extends Controller
             $query->where('status', TransferStatus::fromLabel($request->string('filter.status')->toString()));
         }
 
+        $pin = $request->user()->warehouse_id;
+        if ($pin !== null) {
+            $query->where(function ($builder) use ($pin): void {
+                $builder->where('source_warehouse_id', $pin)
+                    ->orWhere('destination_warehouse_id', $pin);
+            });
+        }
+
         return ApiResponse::paginated(
             $query->orderByDesc('created_at')->paginate($this->perPage($request)),
             TransferResource::class,

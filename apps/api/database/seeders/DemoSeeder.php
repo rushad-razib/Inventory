@@ -210,6 +210,7 @@ class DemoSeeder extends Seeder
             'yusuf' => ['Yusuf Karim', 'yusuf@hartandfield.test', 'Manager', 'Finance', null],
             'nadia' => ['Nadia Chowdhury', 'nadia@hartandfield.test', 'Procurement', 'Procurement', null],
             'karim' => ['Karim Hossain', 'karim@hartandfield.test', 'Warehouse', 'Warehouse', 'DC'],
+            'farah' => ['Farah Islam', 'farah@hartandfield.test', 'Warehouse', 'Warehouse', 'HS'],
             'lina' => ['Lina Ahmed', 'lina@hartandfield.test', 'Cashier', 'Store', 'HS'],
         ];
         $users = [];

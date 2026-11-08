@@ -20,6 +20,35 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    public function demoLogins(): JsonResponse
+    {
+        $users = User::query()
+            ->where('is_active', true)
+            ->with(['roles', 'warehouse'])
+            ->orderBy('name')
+            ->get();
+
+        $data = $users->map(function (User $user): array {
+            $password = null;
+            foreach (['password', 'Password#123'] as $candidate) {
+                if (Hash::check($candidate, $user->password)) {
+                    $password = $candidate;
+                    break;
+                }
+            }
+
+            return [
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->roles->first()?->name,
+                'warehouse' => $user->warehouse?->name,
+                'password' => $password,
+            ];
+        })->values();
+
+        return ApiResponse::data($data);
+    }
+
     public function login(LoginRequest $request): JsonResponse
     {
         $user = User::query()->where('email', $request->string('email'))->first();

@@ -1,7 +1,10 @@
 .page {
   min-height: 100vh;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
   padding: 2rem;
 }
 
@@ -94,4 +97,66 @@
   color: var(--color-danger);
   font-size: 0.8rem;
   font-weight: 400;
+}
+
+.roster {
+  width: min(100%, 420px);
+  background: var(--color-stone-raised);
+  border: 1px solid var(--color-stone-line);
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.1rem 0.4rem;
+}
+
+.rosterTitle {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.rosterMuted {
+  margin: 0 0 0.8rem;
+  color: var(--color-ink-muted);
+  font-size: 0.85rem;
+}
+
+.rosterList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rosterRow {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.15rem 0.75rem;
+  text-align: left;
+  border: 0;
+  border-top: 1px solid var(--color-stone-line);
+  background: transparent;
+  padding: 0.65rem 0.15rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.rosterRow:hover {
+  background: rgb(15 107 107 / 6%);
+}
+
+.rosterName {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.rosterMeta,
+.rosterEmail {
+  color: var(--color-ink-muted);
+  font-size: 0.8rem;
+}
+
+.rosterPassword {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  align-self: center;
 }

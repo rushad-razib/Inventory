@@ -36,6 +36,17 @@ class StoreTransferRequest extends FormRequest
             }
 
             $sourceId = $this->string('source_warehouse_id')->toString();
+            $destinationId = $this->string('destination_warehouse_id')->toString();
+            $pin = $this->user()?->warehouse_id;
+
+            if ($pin !== null && $pin !== $sourceId && $pin !== $destinationId) {
+                $validator->errors()->add(
+                    'source_warehouse_id',
+                    'You can only send from or request into your pinned warehouse.',
+                );
+
+                return;
+            }
 
             foreach ($this->input('lines', []) as $index => $line) {
                 if (! is_array($line)) {

@@ -636,6 +636,26 @@ export async function updateSettings(body: {
   return payload.data as unknown as CompanySettings;
 }
 
+export type DemoLogin = {
+  name: string;
+  email: string;
+  role: string | null;
+  warehouse: string | null;
+  password: string | null;
+};
+
+export async function listDemoLogins(): Promise<DemoLogin[]> {
+  const response = await fetch(`${API_BASE}/api/v1/demo-logins`, {
+    headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+    credentials: "include",
+  });
+  if (!response.ok) {
+    throw new Error(`Request failed (${response.status})`);
+  }
+  const payload = (await response.json()) as { data: DemoLogin[] };
+  return payload.data;
+}
+
 export async function fetchBranding(): Promise<Branding> {
   const { data, error, response } = await apiClient.GET("/v1/branding");
   const payload = assertData(data, error, response.status);

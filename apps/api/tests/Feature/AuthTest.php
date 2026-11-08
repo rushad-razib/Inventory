@@ -12,6 +12,32 @@ beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
 });
 
+it('lists demo login passwords that still match the seeded values', function () {
+    $known = User::factory()->create([
+        'name' => 'Known User',
+        'email' => 'known@example.test',
+        'password' => 'password',
+        'is_active' => true,
+    ]);
+    $known->assignRole('Cashier');
+
+    $changed = User::factory()->create([
+        'name' => 'Changed User',
+        'email' => 'changed@example.test',
+        'password' => 'something-else',
+        'is_active' => true,
+    ]);
+
+    $response = $this->getJson('/api/v1/demo-logins')->assertOk();
+    $rows = collect($response->json('data'));
+
+    expect($rows->firstWhere('email', $known->email))->toMatchArray([
+        'name' => 'Known User',
+        'password' => 'password',
+        'role' => 'Cashier',
+    ])->and($rows->firstWhere('email', $changed->email)['password'])->toBeNull();
+});
+
 it('logs in with valid credentials', function () {
     $user = User::factory()->create([
         'email' => 'admin@example.test',

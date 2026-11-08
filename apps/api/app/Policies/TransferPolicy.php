@@ -50,8 +50,12 @@ class TransferPolicy
             return Response::deny('You do not have permission to cancel transfers.');
         }
 
-        if ($user->warehouse_id !== null && $user->warehouse_id !== $transfer->source_warehouse_id) {
-            return Response::deny('You can only cancel a transfer from your pinned warehouse.');
+        if (
+            $user->warehouse_id !== null
+            && $user->warehouse_id !== $transfer->source_warehouse_id
+            && $user->warehouse_id !== $transfer->destination_warehouse_id
+        ) {
+            return Response::deny('You can only cancel a transfer that involves your pinned warehouse.');
         }
 
         return Response::allow();

@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\LotOwnership;
+use App\Enums\TransferStatus;
 use App\Models\AuditLog;
 use App\Models\CompanySetting;
 use App\Models\Product;
@@ -235,6 +236,68 @@ it('rejects a transfer draft for more than the source has on hand', function () 
         ]);
 
     expect(Transfer::query()->count())->toBe(0);
+});
+
+it('scopes transfer requests to the warehouses a pinned user belongs to', function () {
+    [$source, $product] = stockFixture();
+    $home = Warehouse::query()->create(['code' => 'HOME', 'name' => 'Home', 'is_active' => true]);
+    $other = Warehouse::query()->create(['code' => 'OTHER', 'name' => 'Other', 'is_active' => true]);
+    putLot($source, $product, 5);
+    $requester = stockUser('Warehouse', $home->id);
+    $outsider = stockUser('Warehouse', $other->id);
+    $sourceUser = stockUser('Warehouse', $source->id);
+
+    $request = $this->actingAs($requester)->postJson('/api/v1/transfers', [
+        'source_warehouse_id' => $source->id,
+        'destination_warehouse_id' => $home->id,
+        'lines' => [
+            ['product_id' => $product->id, 'quantity' => 2],
+        ],
+    ])->assertCreated()->json('data');
+
+    $this->actingAs($requester)->postJson('/api/v1/transfers', [
+        'source_warehouse_id' => $source->id,
+        'destination_warehouse_id' => $other->id,
+        'lines' => [
+            ['product_id' => $product->id, 'quantity' => 1],
+        ],
+    ])->assertStatus(422)
+        ->assertJsonPath('errors.source_warehouse_id.0', 'You can only send from or request into your pinned warehouse.');
+
+    $foreign = Transfer::query()->create([
+        'source_warehouse_id' => $source->id,
+        'destination_warehouse_id' => $other->id,
+        'status' => TransferStatus::Draft,
+        'created_by' => $sourceUser->id,
+    ]);
+
+    $visibleToRequester = collect(
+        $this->actingAs($requester)->getJson('/api/v1/transfers')->assertOk()->json('data'),
+    )->pluck('id');
+    expect($visibleToRequester)->toContain($request['id'])->not->toContain($foreign->id);
+
+    $visibleToOutsider = collect(
+        $this->actingAs($outsider)->getJson('/api/v1/transfers')->assertOk()->json('data'),
+    )->pluck('id');
+    expect($visibleToOutsider)->toContain($foreign->id)->not->toContain($request['id']);
+
+    $this->actingAs($outsider)->postJson(
+        '/api/v1/transfers/'.$request['id'].'/ship',
+        [],
+        ['Idempotency-Key' => 'outsider-ship'],
+    )->assertForbidden();
+
+    $this->actingAs($outsider)->postJson(
+        '/api/v1/transfers/'.$request['id'].'/cancel',
+        [],
+        ['Idempotency-Key' => 'outsider-cancel'],
+    )->assertForbidden();
+
+    $this->actingAs($requester)->postJson(
+        '/api/v1/transfers/'.$request['id'].'/cancel',
+        [],
+        ['Idempotency-Key' => 'requester-cancel'],
+    )->assertOk()->assertJsonPath('data.status', 'cancelled');
 });
 
 it('rejects cancelling a shipped transfer and shipping from another warehouse', function () {

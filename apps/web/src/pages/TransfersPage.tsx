@@ -49,6 +49,7 @@ export function TransfersPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const pin = user?.warehouse_id ?? null;
+  const [mode, setMode] = useState<"send" | "request">("send");
 
   const warehousesQuery = useQuery({ queryKey: ["warehouses"], queryFn: listWarehouses });
   const transfersQuery = useQuery({ queryKey: ["transfers"], queryFn: listTransfers });
@@ -74,6 +75,25 @@ export function TransfersPage() {
 
   const { fields, append, remove } = useFieldArray({ control, name: "lines" });
   const sourceId = watch("source_warehouse_id");
+
+  const warehouseRows = warehousesQuery.data?.data;
+
+  useEffect(() => {
+    if (pin == null || warehouseRows == null) {
+      return;
+    }
+    if (mode === "send") {
+      setValue("source_warehouse_id", pin);
+      if (getValues("destination_warehouse_id") === pin) {
+        setValue("destination_warehouse_id", "");
+      }
+      return;
+    }
+    setValue("destination_warehouse_id", pin);
+    if (getValues("source_warehouse_id") === pin) {
+      setValue("source_warehouse_id", "");
+    }
+  }, [mode, pin, warehouseRows, getValues, setValue]);
 
   const sourceStockQuery = useQuery({
     queryKey: ["stock-balances", "transfer-source", sourceId],
@@ -114,8 +134,8 @@ export function TransfersPage() {
     onSuccess: async (transfer) => {
       await queryClient.invalidateQueries({ queryKey: ["transfers"] });
       reset({
-        source_warehouse_id: pin ?? "",
-        destination_warehouse_id: "",
+        source_warehouse_id: pin != null && mode === "send" ? pin : "",
+        destination_warehouse_id: pin != null && mode === "request" ? pin : "",
         lines: [{ product_id: "", quantity: 1 }],
       });
       setFormError(null);
@@ -150,7 +170,12 @@ export function TransfersPage() {
   });
 
   const warehouses = warehousesQuery.data?.data ?? [];
-  const sourceOptions = pin ? warehouses.filter((warehouse) => warehouse.id === pin) : warehouses;
+  const sourceOptions =
+    pin == null ? warehouses : mode === "send" ? warehouses.filter((warehouse) => warehouse.id === pin) : warehouses.filter((warehouse) => warehouse.id !== pin);
+  const destinationOptions =
+    pin != null && mode === "request"
+      ? warehouses.filter((warehouse) => warehouse.id === pin)
+      : warehouses.filter((warehouse) => warehouse.id !== sourceId);
   const transfers = transfersQuery.data?.data ?? [];
   const selected = transfers.find((transfer) => transfer.id === selectedId) ?? null;
 
@@ -218,8 +243,9 @@ export function TransfersPage() {
                 <tr>
                   <th>From</th>
                   <th>To</th>
+                  <th>Product</th>
+                  <th className={styles.money}>Quantity</th>
                   <th>Status</th>
-                  <th>Lines</th>
                 </tr>
               </thead>
               <tbody>
@@ -234,10 +260,21 @@ export function TransfersPage() {
                       setActionError(null);
                     }}
                   >
-                    <td>{transfer.source_warehouse.code}</td>
-                    <td>{transfer.destination_warehouse.code}</td>
+                    <td>{transfer.source_warehouse.name}</td>
+                    <td>{transfer.destination_warehouse.name}</td>
+                    <td>
+                      {transfer.lines.map((line) => (
+                        <div key={line.id}>{line.product.name}</div>
+                      ))}
+                    </td>
+                    <td className={styles.money}>
+                      {transfer.lines.map((line) => (
+                        <div key={line.id} className="mono">
+                          {line.quantity}
+                        </div>
+                      ))}
+                    </td>
                     <td>{prettyLabel(transfer.status)}</td>
-                    <td className="mono">{transfer.lines.length}</td>
                   </tr>
                 ))}
               </tbody>
@@ -257,12 +294,30 @@ export function TransfersPage() {
           ) : null}
 
           <section className={styles.panel}>
-            <h2 className={styles.panelTitle}>Create draft</h2>
+            <h2 className={styles.panelTitle}>{pin != null && mode === "request" ? "Request stock" : "Create draft"}</h2>
+            {pin != null ? (
+              <div className={styles.actions}>
+                <button
+                  className={mode === "send" ? styles.button : styles.buttonSecondary}
+                  type="button"
+                  onClick={() => setMode("send")}
+                >
+                  Send stock
+                </button>
+                <button
+                  className={mode === "request" ? styles.button : styles.buttonSecondary}
+                  type="button"
+                  onClick={() => setMode("request")}
+                >
+                  Request stock
+                </button>
+              </div>
+            ) : null}
             <form className={styles.form} onSubmit={onSubmit}>
               <label className={styles.label}>
                 Source
                 <select className={styles.select} {...register("source_warehouse_id")}>
-                  <option value="">Choose a warehouse</option>
+                  {pin != null && mode === "send" ? null : <option value="">Choose a warehouse</option>}
                   {sourceOptions.map((warehouse) => (
                     <option key={warehouse.id} value={warehouse.id}>
                       {warehouse.code} · {warehouse.name}
@@ -276,14 +331,12 @@ export function TransfersPage() {
               <label className={styles.label}>
                 Destination
                 <select className={styles.select} {...register("destination_warehouse_id")}>
-                  <option value="">Choose a warehouse</option>
-                  {warehouses
-                    .filter((warehouse) => warehouse.id !== sourceId)
-                    .map((warehouse) => (
-                      <option key={warehouse.id} value={warehouse.id}>
-                        {warehouse.code} · {warehouse.name}
-                      </option>
-                    ))}
+                  {pin != null && mode === "request" ? null : <option value="">Choose a warehouse</option>}
+                  {destinationOptions.map((warehouse) => (
+                    <option key={warehouse.id} value={warehouse.id}>
+                      {warehouse.code} · {warehouse.name}
+                    </option>
+                  ))}
                 </select>
                 {errors.destination_warehouse_id ? (
                   <span className={styles.fieldError}>{errors.destination_warehouse_id.message}</span>
@@ -345,7 +398,7 @@ export function TransfersPage() {
 
               {formError ? <p className={styles.error}>{formError}</p> : null}
               <button className={styles.button} type="submit" disabled={isSubmitting || createMutation.isPending}>
-                {createMutation.isPending ? "Saving…" : "Save draft"}
+                {createMutation.isPending ? "Saving…" : mode === "request" && pin != null ? "Request draft" : "Save draft"}
               </button>
             </form>
           </section>
@@ -368,11 +421,12 @@ function TransferActions({
   error: string | null;
   onAction: (action: "ship" | "receive" | "cancel") => void;
 }) {
+  const involved =
+    pin == null || pin === transfer.source_warehouse_id || pin === transfer.destination_warehouse_id;
   const canShip = transfer.status === "draft" && canActAt(pin, transfer.source_warehouse_id);
-  const canCancel = transfer.status === "draft" && canActAt(pin, transfer.source_warehouse_id);
+  const canCancel = transfer.status === "draft" && involved;
   const canReceive = transfer.status === "in_transit" && canActAt(pin, transfer.destination_warehouse_id);
-  const blocked =
-    (transfer.status === "draft" && !canShip) || (transfer.status === "in_transit" && !canReceive);
+  const blocked = transfer.status === "in_transit" && !canReceive;
 
   return (
     <section className={styles.panel}>
@@ -391,7 +445,9 @@ function TransferActions({
           </div>
         ))}
       </div>
-      {blocked ? <p className={styles.muted}>This transfer is outside your pinned warehouse.</p> : null}
+      {blocked ? (
+        <p className={styles.muted}>Waiting for the destination warehouse to receive this transfer.</p>
+      ) : null}
       <div className={styles.actions}>
         {canShip ? (
           <button className={styles.button} type="button" disabled={busy} onClick={() => onAction("ship")}>
