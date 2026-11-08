@@ -285,6 +285,38 @@ export async function listProducts(q?: string): Promise<{ data: Product[]; meta:
   };
 }
 
+const PRODUCT_PAGE_SIZE = 100;
+
+type ProductListQuery = {
+  q?: string;
+  "filter[sku]"?: string;
+};
+
+/** Every product. The list endpoint pages at 25 unless per_page is set. */
+export async function listAllProducts(): Promise<Product[]> {
+  const products: Product[] = [];
+  let page = 1;
+  let lastPage = 1;
+
+  do {
+    const { data, error, response } = await apiClient.GET("/v1/products", {
+      params: {
+        query: { page, per_page: PRODUCT_PAGE_SIZE } as ProductListQuery,
+      },
+    });
+    const payload = assertData(data, error, response.status);
+    const batch = payload.data as unknown as Product[];
+    products.push(...batch);
+    lastPage = payload.meta.last_page || 1;
+    if (batch.length < PRODUCT_PAGE_SIZE) {
+      break;
+    }
+    page += 1;
+  } while (page <= lastPage);
+
+  return products;
+}
+
 export type ProductInput = {
   sku: string;
   name: string;

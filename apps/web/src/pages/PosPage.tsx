@@ -5,7 +5,8 @@ import {
   createCustomer,
   createSale,
   getCurrentDrawer,
-  listProducts,
+  listAllProducts,
+  listAllStockBalances,
   listWarehouses,
   lookupCustomer,
   lookupProduct,
@@ -44,27 +45,51 @@ export function PosPage() {
     queryFn: listWarehouses,
     enabled: pin === null && drawer === null,
   });
-  const productsQuery = useQuery({ queryKey: ["products"], queryFn: () => listProducts() });
-  const products = (productsQuery.data?.data ?? []).filter((product) => product.track_stock && product.is_active);
+  const stockQuery = useQuery({
+    queryKey: ["stock-balances", "till", drawer?.warehouse_id],
+    queryFn: () => listAllStockBalances(drawer!.warehouse_id),
+    enabled: drawer != null,
+  });
+  const productsQuery = useQuery({
+    queryKey: ["products", "till"],
+    queryFn: listAllProducts,
+    enabled: drawer != null,
+  });
+  const onHandByProduct = new Map(
+    (stockQuery.data ?? []).filter((balance) => balance.on_hand > 0).map((balance) => [balance.product_id, balance.on_hand]),
+  );
+  const products = (productsQuery.data ?? [])
+    .filter((product) => product.track_stock && product.is_active && (onHandByProduct.get(product.id) ?? 0) > 0)
+    .sort((a, b) => a.sku.localeCompare(b.sku));
   const shelf = cartShelfTotal(cart.map((line) => ({ unitPrice: line.product.sell_price, quantity: line.quantity })));
   const pointCap = Math.min(customer?.points_balance ?? 0, shelf);
   const appliedPoints = customer ? Math.min(Math.max(points, 0), pointCap) : 0;
   const cashDue = Math.max(shelf - appliedPoints - card, 0);
 
   const addProduct = (product: Product) => {
-    if (!product.track_stock || !product.is_active) {
-      setError("That product cannot be sold.");
+    if (drawer != null && (stockQuery.isLoading || !stockQuery.isSuccess)) {
+      setError("Wait for warehouse stock to load.");
+      return;
+    }
+    const onHand = onHandByProduct.get(product.id) ?? 0;
+    if (!product.track_stock || !product.is_active || onHand < 1) {
+      setError("That product is not on hand at this warehouse.");
+      return;
+    }
+    const existing = cart.find((line) => line.product.id === product.id);
+    if ((existing?.quantity ?? 0) + 1 > onHand) {
+      setError(`Only ${onHand} on hand`);
       return;
     }
     setError(null);
     setPosted(null);
     setCart((current) => {
-      const existing = current.find((line) => line.product.id === product.id);
-      if (!existing) {
+      const line = current.find((item) => item.product.id === product.id);
+      if (!line) {
         return [...current, { product, quantity: 1 }];
       }
-      return current.map((line) =>
-        line.product.id === product.id ? { ...line, quantity: line.quantity + 1 } : line,
+      return current.map((item) =>
+        item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
       );
     });
   };
@@ -287,6 +312,7 @@ export function PosPage() {
             <select
               className={styles.select}
               value=""
+              disabled={stockQuery.isLoading || productsQuery.isLoading}
               onChange={(event) => {
                 const product = products.find((item) => item.id === event.target.value);
                 if (product) {
@@ -294,10 +320,16 @@ export function PosPage() {
                 }
               }}
             >
-              <option value="">Add a tracked product</option>
+              <option value="">
+                {stockQuery.isLoading || productsQuery.isLoading
+                  ? "Loading stock…"
+                  : products.length === 0
+                    ? "No products on hand"
+                    : "Add a product"}
+              </option>
               {products.map((product) => (
                 <option key={product.id} value={product.id}>
-                  {product.sku} · {product.name} · {formatTaka(product.sell_price)}
+                  {product.sku} · {product.name} · {onHandByProduct.get(product.id)} on hand · {formatTaka(product.sell_price)}
                 </option>
               ))}
             </select>
@@ -352,11 +384,22 @@ export function PosPage() {
               className={`mono ${styles.input}`}
               type="number"
               min={1}
+              max={onHandByProduct.get(line.product.id) ?? line.quantity}
               value={line.quantity}
               onChange={(event) => {
+                const onHand = onHandByProduct.get(line.product.id) ?? line.quantity;
                 const quantity = Number(event.target.value);
+                if (quantity > onHand) {
+                  setError(`Only ${onHand} on hand`);
+                } else {
+                  setError(null);
+                }
                 setCart((current) =>
-                  current.map((item) => (item.product.id === line.product.id ? { ...item, quantity } : item)),
+                  current.map((item) =>
+                    item.product.id === line.product.id
+                      ? { ...item, quantity: Math.min(Math.max(quantity, 1), onHand) }
+                      : item,
+                  ),
                 );
               }}
             />
