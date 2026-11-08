@@ -380,29 +380,40 @@ export function PosPage() {
             <span>
               <span className="mono">{line.product.sku}</span> · {formatTaka(line.product.sell_price)}
             </span>
-            <input
-              className={`mono ${styles.input}`}
-              type="number"
-              min={1}
-              max={onHandByProduct.get(line.product.id) ?? line.quantity}
-              value={line.quantity}
-              onChange={(event) => {
-                const onHand = onHandByProduct.get(line.product.id) ?? line.quantity;
-                const quantity = Number(event.target.value);
-                if (quantity > onHand) {
-                  setError(`Only ${onHand} on hand`);
-                } else {
-                  setError(null);
+            <div className={styles.cartControls}>
+              <input
+                className={`mono ${styles.input}`}
+                type="number"
+                min={1}
+                max={onHandByProduct.get(line.product.id) ?? line.quantity}
+                value={line.quantity}
+                onChange={(event) => {
+                  const onHand = onHandByProduct.get(line.product.id) ?? line.quantity;
+                  const quantity = Number(event.target.value);
+                  if (quantity > onHand) {
+                    setError(`Only ${onHand} on hand`);
+                  } else {
+                    setError(null);
+                  }
+                  setCart((current) =>
+                    current.map((item) =>
+                      item.product.id === line.product.id
+                        ? { ...item, quantity: Math.min(Math.max(quantity, 1), onHand) }
+                        : item,
+                    ),
+                  );
+                }}
+              />
+              <button
+                className={styles.buttonSecondary}
+                type="button"
+                onClick={() =>
+                  setCart((current) => current.filter((item) => item.product.id !== line.product.id))
                 }
-                setCart((current) =>
-                  current.map((item) =>
-                    item.product.id === line.product.id
-                      ? { ...item, quantity: Math.min(Math.max(quantity, 1), onHand) }
-                      : item,
-                  ),
-                );
-              }}
-            />
+              >
+                Clear
+              </button>
+            </div>
           </div>
         ))}
         <p className={`mono ${styles.tillTotals}`}>Shelf {formatTaka(shelf)}</p>

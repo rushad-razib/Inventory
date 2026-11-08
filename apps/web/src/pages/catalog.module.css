@@ -339,6 +339,16 @@
   gap: 0.5rem;
 }
 
+.cartControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cartControls .input {
+  width: 5.5rem;
+}
+
 .lineRow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 6.5rem auto;
