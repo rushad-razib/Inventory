@@ -3,10 +3,11 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createWarehouse, deleteWarehouse, listWarehouses, updateWarehouse, type Warehouse } from "../lib/api";
+import { createWarehouse, deleteWarehouse, listAllStockBalances, listWarehouses, updateWarehouse, type Warehouse } from "../lib/api";
 import { confirmDelete, showWarning } from "../lib/dialogs";
 import { useAuth } from "../lib/auth";
 import { can } from "../lib/permissions";
+import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
 const schema = z.object({
@@ -27,10 +28,17 @@ export function WarehousesPage() {
   const [editError, setEditError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const canCreate = can(user, "settings.manage");
+  const canViewStock = can(user, "inventory.view");
 
   const warehousesQuery = useQuery({
     queryKey: ["warehouses"],
     queryFn: listWarehouses,
+  });
+
+  const stockQuery = useQuery({
+    queryKey: ["stock-balances", "warehouse", selectedId],
+    queryFn: () => listAllStockBalances(selectedId!),
+    enabled: canViewStock && selectedId !== null,
   });
 
   const {
@@ -90,6 +98,9 @@ export function WarehousesPage() {
   });
 
   const selected = warehousesQuery.data?.data.find((warehouse: Warehouse) => warehouse.id === selectedId) ?? null;
+  const stockRows = (stockQuery.data ?? [])
+    .filter((balance) => balance.on_hand > 0 || balance.damaged > 0 || balance.in_transit > 0)
+    .sort((a, b) => a.product.sku.localeCompare(b.product.sku));
 
   useEffect(() => {
     if (!selected) {
@@ -127,40 +138,81 @@ export function WarehousesPage() {
       </header>
 
       <div className={styles.split}>
-        <div className={styles.tableWrap}>
-          {warehousesQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
-          {warehousesQuery.isError ? (
-            <p className={styles.error}>{(warehousesQuery.error as Error).message}</p>
-          ) : null}
-          {warehousesQuery.data ? (
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Code</th>
-                  <th>Name</th>
-                  <th>Address</th>
-                  <th>Default</th>
-                  <th>Active</th>
-                </tr>
-              </thead>
-              <tbody>
-                {warehousesQuery.data.data.map((warehouse) => (
-                  <tr
-                    key={warehouse.id}
-                    className={[styles.clickable, selectedId === warehouse.id ? styles.selected : ""]
-                      .filter(Boolean)
-                      .join(" ")}
-                    onClick={() => setSelectedId(warehouse.id)}
-                  >
-                    <td className="mono">{warehouse.code}</td>
-                    <td>{warehouse.name}</td>
-                    <td>{warehouse.address ?? "—"}</td>
-                    <td>{warehouse.is_default ? "Yes" : "No"}</td>
-                    <td>{warehouse.is_active ? "Yes" : "No"}</td>
+        <div className={styles.stack}>
+          <div className={styles.tableWrap}>
+            {warehousesQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
+            {warehousesQuery.isError ? (
+              <p className={styles.error}>{(warehousesQuery.error as Error).message}</p>
+            ) : null}
+            {warehousesQuery.data ? (
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th>Default</th>
+                    <th>Active</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {warehousesQuery.data.data.map((warehouse) => (
+                    <tr
+                      key={warehouse.id}
+                      className={[styles.clickable, selectedId === warehouse.id ? styles.selected : ""]
+                        .filter(Boolean)
+                        .join(" ")}
+                      onClick={() => setSelectedId(warehouse.id)}
+                    >
+                      <td className="mono">{warehouse.code}</td>
+                      <td>{warehouse.name}</td>
+                      <td>{warehouse.address ?? "—"}</td>
+                      <td>{warehouse.is_default ? "Yes" : "No"}</td>
+                      <td>{warehouse.is_active ? "Yes" : "No"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : null}
+          </div>
+
+          {canViewStock && selected ? (
+            <section>
+              <h2 className={styles.panelTitle}>
+                Stock in {selected.code} · {selected.name}
+              </h2>
+              {stockQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
+              {stockQuery.isError ? <p className={styles.error}>{(stockQuery.error as Error).message}</p> : null}
+              {stockQuery.data && stockRows.length === 0 ? (
+                <EmptyState>No stock in this warehouse.</EmptyState>
+              ) : null}
+              {stockRows.length > 0 ? (
+                <div className={styles.tableWrap}>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th className={styles.money}>On hand</th>
+                        <th className={styles.money}>Damaged</th>
+                        <th className={styles.money}>In transit</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stockRows.map((balance) => (
+                        <tr key={balance.id}>
+                          <td>
+                            <span className="mono">{balance.product.sku}</span> {balance.product.name}
+                          </td>
+                          <td className={`mono ${styles.money}`}>{balance.on_hand}</td>
+                          <td className={`mono ${styles.money}`}>{balance.damaged}</td>
+                          <td className={`mono ${styles.money}`}>{balance.in_transit}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+            </section>
           ) : null}
         </div>
 

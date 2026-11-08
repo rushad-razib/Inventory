@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   cancelTransfer,
   createTransfer,
-  listProducts,
+  listAllStockBalances,
   listTransfers,
   listWarehouses,
   receiveTransfer,
@@ -51,7 +51,6 @@ export function TransfersPage() {
   const pin = user?.warehouse_id ?? null;
 
   const warehousesQuery = useQuery({ queryKey: ["warehouses"], queryFn: listWarehouses });
-  const productsQuery = useQuery({ queryKey: ["products"], queryFn: () => listProducts() });
   const transfersQuery = useQuery({ queryKey: ["transfers"], queryFn: listTransfers });
 
   const {
@@ -60,6 +59,8 @@ export function TransfersPage() {
     handleSubmit,
     reset,
     watch,
+    getValues,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -72,6 +73,40 @@ export function TransfersPage() {
 
   const { fields, append, remove } = useFieldArray({ control, name: "lines" });
   const sourceId = watch("source_warehouse_id");
+
+  const sourceStockQuery = useQuery({
+    queryKey: ["stock-balances", "transfer-source", sourceId],
+    queryFn: () => listAllStockBalances(sourceId),
+    enabled: sourceId !== "",
+  });
+
+  const availableProducts = (sourceStockQuery.data ?? [])
+    .filter((balance) => balance.on_hand > 0)
+    .sort((a, b) => a.product.sku.localeCompare(b.product.sku));
+
+  useEffect(() => {
+    if (sourceId === "") {
+      getValues("lines").forEach((line, index) => {
+        if (line.product_id) {
+          setValue(`lines.${index}.product_id`, "");
+        }
+      });
+      return;
+    }
+
+    if (!sourceStockQuery.isSuccess) {
+      return;
+    }
+
+    const availableIds = new Set(
+      sourceStockQuery.data.filter((balance) => balance.on_hand > 0).map((balance) => balance.product_id),
+    );
+    getValues("lines").forEach((line, index) => {
+      if (line.product_id && !availableIds.has(line.product_id)) {
+        setValue(`lines.${index}.product_id`, "");
+      }
+    });
+  }, [sourceId, sourceStockQuery.isSuccess, sourceStockQuery.data, getValues, setValue]);
 
   const createMutation = useMutation({
     mutationFn: createTransfer,
@@ -115,7 +150,6 @@ export function TransfersPage() {
 
   const warehouses = warehousesQuery.data?.data ?? [];
   const sourceOptions = pin ? warehouses.filter((warehouse) => warehouse.id === pin) : warehouses;
-  const products = (productsQuery.data?.data ?? []).filter((product) => product.track_stock);
   const transfers = transfersQuery.data?.data ?? [];
   const selected = transfers.find((transfer) => transfer.id === selectedId) ?? null;
 
@@ -229,11 +263,17 @@ export function TransfersPage() {
                 <div className={styles.lineRow} key={field.id}>
                   <label className={styles.label}>
                     Product
-                    <select className={styles.select} {...register(`lines.${index}.product_id`)}>
-                      <option value="">Choose a product</option>
-                      {products.map((product) => (
-                        <option key={product.id} value={product.id}>
-                          {product.sku} · {product.name}
+                    <select
+                      className={styles.select}
+                      {...register(`lines.${index}.product_id`)}
+                      disabled={sourceId === "" || sourceStockQuery.isLoading}
+                    >
+                      <option value="">
+                        {sourceId === "" ? "Choose a source first" : "Choose a product"}
+                      </option>
+                      {availableProducts.map((balance) => (
+                        <option key={balance.product_id} value={balance.product_id}>
+                          {balance.product.sku} · {balance.product.name}
                         </option>
                       ))}
                     </select>

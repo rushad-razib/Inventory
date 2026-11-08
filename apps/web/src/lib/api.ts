@@ -772,11 +772,58 @@ function idempotencyHeaders(): { "Idempotency-Key": string } {
   return { "Idempotency-Key": crypto.randomUUID() };
 }
 
+const STOCK_BALANCE_PAGE_SIZE = 100;
+
+type StockBalanceQuery = {
+  "filter[warehouse_id]"?: string;
+  "filter[product_id]"?: string;
+};
+
 export async function listStockBalances(
   warehouseId: string,
 ): Promise<{ data: StockBalance[]; meta: PaginatedMeta }> {
   const { data, error, response } = await apiClient.GET("/v1/stock-balances", {
     params: { query: { "filter[warehouse_id]": warehouseId } },
+  });
+  const payload = assertData(data, error, response.status);
+  return {
+    data: payload.data as unknown as StockBalance[],
+    meta: payload.meta,
+  };
+}
+
+/** Every balance for a warehouse. The list endpoint pages at 25 unless per_page is set. */
+export async function listAllStockBalances(warehouseId: string): Promise<StockBalance[]> {
+  const balances: StockBalance[] = [];
+  let page = 1;
+  let lastPage = 1;
+
+  do {
+    const result = await listStockBalancesPage(warehouseId, page, STOCK_BALANCE_PAGE_SIZE);
+    balances.push(...result.data);
+    lastPage = result.meta.last_page || 1;
+    if (result.data.length < STOCK_BALANCE_PAGE_SIZE) {
+      break;
+    }
+    page += 1;
+  } while (page <= lastPage);
+
+  return balances;
+}
+
+async function listStockBalancesPage(
+  warehouseId: string,
+  page: number,
+  perPage: number,
+): Promise<{ data: StockBalance[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/stock-balances", {
+    params: {
+      query: {
+        "filter[warehouse_id]": warehouseId,
+        page,
+        per_page: perPage,
+      } as StockBalanceQuery,
+    },
   });
   const payload = assertData(data, error, response.status);
   return {
