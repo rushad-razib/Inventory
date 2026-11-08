@@ -61,6 +61,7 @@ export function TransfersPage() {
     watch,
     getValues,
     setValue,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -155,6 +156,36 @@ export function TransfersPage() {
 
   const onSubmit = handleSubmit((values) => {
     setFormError(null);
+
+    if (!sourceStockQuery.isSuccess || sourceStockQuery.isFetching) {
+      setFormError("Wait for the source warehouse stock to load.");
+      return;
+    }
+
+    const onHandByProduct = new Map(
+      sourceStockQuery.data.map((balance) => [balance.product_id, balance.on_hand]),
+    );
+    const requested = new Map<string, number>();
+    for (const line of values.lines) {
+      requested.set(line.product_id, (requested.get(line.product_id) ?? 0) + line.quantity);
+    }
+
+    let overStock = false;
+    values.lines.forEach((line, index) => {
+      const onHand = onHandByProduct.get(line.product_id) ?? 0;
+      const total = requested.get(line.product_id) ?? line.quantity;
+      if (total > onHand) {
+        setError(`lines.${index}.quantity`, {
+          type: "validate",
+          message: `Only ${onHand} on hand at the source`,
+        });
+        overStock = true;
+      }
+    });
+    if (overStock) {
+      return;
+    }
+
     createMutation.mutate({
       source_warehouse_id: values.source_warehouse_id,
       destination_warehouse_id: values.destination_warehouse_id,

@@ -8,6 +8,7 @@ use App\Models\StockBalance;
 use App\Models\StockLot;
 use App\Models\StockMovement;
 use App\Models\SupplierReturn;
+use App\Models\Transfer;
 use App\Models\User;
 use App\Models\Warehouse;
 use Database\Seeders\RolePermissionSeeder;
@@ -209,6 +210,31 @@ it('does not double a lot when a transfer receive is replayed', function () {
     )->assertStatus(409)->assertJsonPath('type', '/problems/idempotency-conflict');
 
     expect(StockLot::query()->where('warehouse_id', $destination->id)->count())->toBe(1);
+});
+
+it('rejects a transfer draft for more than the source has on hand', function () {
+    [$source, $product] = stockFixture();
+    $destination = Warehouse::query()->create([
+        'code' => 'SHOP',
+        'name' => 'Shop',
+        'is_active' => true,
+    ]);
+    putLot($source, $product, 10);
+    $user = stockUser('Admin');
+
+    $this->actingAs($user)->postJson('/api/v1/transfers', [
+        'source_warehouse_id' => $source->id,
+        'destination_warehouse_id' => $destination->id,
+        'lines' => [
+            ['product_id' => $product->id, 'quantity' => 11],
+        ],
+    ])->assertStatus(422)
+        ->assertJsonPath('type', '/problems/validation-failed')
+        ->assertJsonPath('errors', [
+            'lines.0.quantity' => ['Only 10 on hand at the source warehouse.'],
+        ]);
+
+    expect(Transfer::query()->count())->toBe(0);
 });
 
 it('rejects cancelling a shipped transfer and shipping from another warehouse', function () {
