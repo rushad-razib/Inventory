@@ -476,14 +476,17 @@ export function SuppliersPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {linksQuery.data.data.map((link) => (
-                        <tr key={link.id}>
-                          <td className="mono">
-                            {products.find((product) => product.id === link.product_id)?.sku ?? link.product_id}
-                          </td>
-                          <td className={`mono ${styles.money}`}>{formatTaka(link.agreed_unit_cost)}</td>
-                        </tr>
-                      ))}
+                      {linksQuery.data.data.map((link) => {
+                        const product = products.find((item) => item.id === link.product_id);
+                        return (
+                          <tr key={link.id}>
+                            <td className="mono">
+                              {product ? `${product.sku} · ${product.name}` : link.product_id}
+                            </td>
+                            <td className={`mono ${styles.money}`}>{formatTaka(link.agreed_unit_cost)}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 ) : null}

@@ -109,6 +109,7 @@ export function GoodsReceiptsPage() {
     handleSubmit,
     reset,
     watch,
+    getValues,
     formState: { errors },
   } = useForm<ConsignValues>({
     resolver: zodResolver(consignSchema),
@@ -118,13 +119,33 @@ export function GoodsReceiptsPage() {
       lines: [{ product_id: "", quantity: 1 }],
     },
   });
-  const { fields, append, remove } = useFieldArray({ control, name: "lines" });
+  const { fields, append, remove, replace } = useFieldArray({ control, name: "lines" });
   const supplierId = watch("supplier_id");
   const costsQuery = useQuery({
     queryKey: ["supplier-products", supplierId],
     queryFn: () => listSupplierProducts(supplierId),
     enabled: supplierId !== "",
   });
+
+  useEffect(() => {
+    const allowed =
+      supplierId !== "" && costsQuery.isSuccess
+        ? new Set(costsQuery.data.data.map((row) => row.product_id))
+        : null;
+    const current = getValues("lines");
+    const next = current.map((line) => {
+      if (line.product_id === "") {
+        return line;
+      }
+      if (allowed === null || !allowed.has(line.product_id)) {
+        return { ...line, product_id: "" };
+      }
+      return line;
+    });
+    if (next.some((line, index) => line.product_id !== current[index]?.product_id)) {
+      replace(next);
+    }
+  }, [supplierId, costsQuery.isSuccess, costsQuery.data, getValues, replace]);
 
   const consignMutation = useMutation({
     mutationFn: (values: ConsignValues) =>
@@ -145,7 +166,13 @@ export function GoodsReceiptsPage() {
     (supplier) => supplier.supply_mode === "consignment" && supplier.status === "active",
   );
   const warehouses = (warehousesQuery.data?.data ?? []).filter((warehouse) => pin === null || warehouse.id === pin);
-  const products = (productsQuery.data?.data ?? []).filter((product) => product.track_stock && product.is_active);
+  const linkedIds = new Set((costsQuery.data?.data ?? []).map((row) => row.product_id));
+  const products =
+    supplierId === ""
+      ? []
+      : (productsQuery.data?.data ?? []).filter(
+          (product) => product.track_stock && product.is_active && linkedIds.has(product.id),
+        );
   const costs = new Map((costsQuery.data?.data ?? []).map((row) => [row.product_id, row.agreed_unit_cost]));
 
   return (
@@ -274,7 +301,11 @@ export function GoodsReceiptsPage() {
                     <div className={styles.lineRow} key={field.id}>
                       <label className={styles.label}>
                         Product
-                        <select className={styles.select} {...register(`lines.${index}.product_id`)}>
+                        <select
+                          className={styles.select}
+                          {...register(`lines.${index}.product_id`)}
+                          disabled={supplierId === ""}
+                        >
                           <option value="">Choose a product</option>
                           {products.map((product) => (
                             <option key={product.id} value={product.id}>
