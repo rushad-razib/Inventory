@@ -339,10 +339,89 @@
   gap: 0.5rem;
 }
 
+.cartLine {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-stone-line);
+}
+
+.cartLineBody {
+  min-width: 0;
+}
+
+.cartName {
+  margin: 0;
+  font-weight: 600;
+}
+
+.cartMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin: 0.2rem 0 0;
+  color: var(--color-ink-muted);
+  font-size: 0.85rem;
+}
+
 .cartControls {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.saleReceipt {
+  max-width: 28rem;
+}
+
+.receiptStore {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.receiptMeta {
+  margin: 0.2rem 0 0;
+  color: var(--color-ink-muted);
+}
+
+.receiptSku {
+  color: var(--color-ink-muted);
+  font-size: 0.85rem;
+}
+
+.receiptTotals {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+  text-align: right;
+}
+
+.receiptTotals p {
+  margin: 0;
+}
+
+@media print {
+  :global(body *) {
+    visibility: hidden;
+  }
+
+  .saleReceipt,
+  .saleReceipt * {
+    visibility: visible;
+  }
+
+  .saleReceipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none;
+    border: 0;
+    box-shadow: none;
+  }
 }
 
 .cartControls .input {

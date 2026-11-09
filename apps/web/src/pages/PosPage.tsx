@@ -16,6 +16,8 @@ import {
   type Sale,
 } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import { brandingLabel, useBranding } from "../lib/branding";
+import { prettyLabel } from "../lib/labels";
 import { cartShelfTotal, changeDue, formatTaka } from "../lib/money";
 import styles from "./catalog.module.css";
 
@@ -34,6 +36,8 @@ export function PosPage() {
   const [card, setCard] = useState(0);
   const [cashReceived, setCashReceived] = useState(0);
   const [posted, setPosted] = useState<Sale | null>(null);
+  const [receiptChange, setReceiptChange] = useState(0);
+  const { data: branding } = useBranding();
   const [error, setError] = useState<string | null>(null);
   const [openingBalance, setOpeningBalance] = useState("");
   const [counted, setCounted] = useState("");
@@ -130,7 +134,7 @@ export function PosPage() {
   });
 
   const saleMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const tenders: { type: "cash" | "card" | "points"; amount: number }[] = [];
       if (appliedPoints > 0) {
         tenders.push({ type: "points", amount: appliedPoints });
@@ -144,19 +148,24 @@ export function PosPage() {
       if (!drawer) {
         throw new Error("Open a drawer before posting a sale.");
       }
-      return createSale({
+      const change = changeDue(cashReceived, cashDue);
+      const sale = await createSale({
         warehouse_id: drawer.warehouse_id,
         customer_id: customer?.id ?? null,
         lines: cart.map((line) => ({ product_id: line.product.id, quantity: line.quantity })),
         tenders,
       });
+      return { sale, change };
     },
-    onSuccess: async (sale) => {
+    onSuccess: async ({ sale, change }) => {
       setPosted(sale);
+      setReceiptChange(change);
       setCart([]);
       setPoints(0);
       setCard(0);
       setCashReceived(0);
+      setMobile("");
+      setCustomer(null);
       setError(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["sales"] }),
@@ -376,10 +385,16 @@ export function PosPage() {
         <h2 className={styles.panelTitle}>Cart</h2>
         {cart.length === 0 ? <p className={styles.muted}>The cart is empty.</p> : null}
         {cart.map((line) => (
-          <div className={styles.detailRow} key={line.product.id}>
-            <span>
-              <span className="mono">{line.product.sku}</span> · {formatTaka(line.product.sell_price)}
-            </span>
+          <div className={styles.cartLine} key={line.product.id}>
+            <div className={styles.cartLineBody}>
+              <p className={styles.cartName}>{line.product.name}</p>
+              <p className={styles.cartMeta}>
+                <span className="mono">{line.product.sku}</span>
+                <span>Qty {line.quantity}</span>
+                <span>{formatTaka(line.product.sell_price)} each</span>
+                <span>{formatTaka(line.product.sell_price * line.quantity)}</span>
+              </p>
+            </div>
             <div className={styles.cartControls}>
               <input
                 className={`mono ${styles.input}`}
@@ -456,33 +471,77 @@ export function PosPage() {
           <p className={styles.changeDue}>Change due {formatTaka(changeDue(cashReceived, cashDue))}</p>
         </div>
         {error ? <p className={styles.error}>{error}</p> : null}
-        <button
-          className={styles.button}
-          type="button"
-          disabled={saleMutation.isPending || cart.length === 0 || cashDue + card + appliedPoints !== shelf}
-          onClick={() => saleMutation.mutate()}
-        >
-          {saleMutation.isPending ? "Posting…" : "Post sale"}
-        </button>
+        <div className={styles.actions}>
+          <button
+            className={styles.button}
+            type="button"
+            disabled={
+              saleMutation.isPending ||
+              cart.length === 0 ||
+              cashDue + card + appliedPoints !== shelf ||
+              cashReceived < cashDue
+            }
+            onClick={() => saleMutation.mutate()}
+          >
+            {saleMutation.isPending ? "Posting…" : "Post sale"}
+          </button>
+          <button className={styles.buttonSecondary} type="button" disabled={posted === null} onClick={() => window.print()}>
+            Print receipt
+          </button>
+        </div>
       </section>
       </div>
       ) : null}
 
       {posted ? (
-        <section className={styles.panel}>
-          <h2 className={styles.panelTitle}>
-            {posted.number} · {posted.status}
-          </h2>
-          {posted.lines.map((line) => (
-            <p key={line.id}>
-              <span className="mono">{line.product.sku}</span> {line.cash_paid}/{line.points_redeemed}/{line.points_earned}
-              {line.allocations.some((allocation) => allocation.payable) ? " · consignment payable" : ""}
-            </p>
-          ))}
-          <p className={styles.muted}>
-            Earned <span className="mono">{posted.points_earned}</span>
-            {posted.points_balance_after !== null ? ` · balance ${posted.points_balance_after}` : ""}
+        <section className={`${styles.panel} ${styles.saleReceipt}`}>
+          <h2 className={styles.receiptStore}>{brandingLabel(branding)}</h2>
+          <p className={styles.receiptMeta}>
+            <span className="mono">{posted.number}</span>
+            {posted.created_at ? ` · ${new Date(posted.created_at).toLocaleString()}` : ""}
           </p>
+          <p className={styles.receiptMeta}>{posted.warehouse.name}</p>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th className={styles.money}>Qty</th>
+                <th className={styles.money}>Price</th>
+                <th className={styles.money}>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {posted.lines.map((line) => (
+                <tr key={line.id}>
+                  <td>
+                    {line.product.name}
+                    <span className={`mono ${styles.receiptSku}`}> {line.product.sku}</span>
+                  </td>
+                  <td className={`mono ${styles.money}`}>{line.quantity}</td>
+                  <td className={`mono ${styles.money}`}>{formatTaka(line.unit_price)}</td>
+                  <td className={`mono ${styles.money}`}>{formatTaka(line.shelf_total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className={styles.receiptTotals}>
+            {posted.tenders.map((tender) => (
+              <p key={tender.id}>
+                {prettyLabel(tender.type)} <span className="mono">{formatTaka(tender.amount)}</span>
+              </p>
+            ))}
+            <p>
+              Total <span className="mono">{formatTaka(posted.total)}</span>
+            </p>
+            <p>
+              Change <span className="mono">{formatTaka(receiptChange)}</span>
+            </p>
+            {posted.points_earned > 0 ? (
+              <p>
+                Points earned <span className="mono">{posted.points_earned}</span>
+              </p>
+            ) : null}
+          </div>
         </section>
       ) : null}
     </div>
