@@ -7,6 +7,7 @@ import { formatTaka } from "../lib/money";
 import { can } from "../lib/permissions";
 import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 
 function remainder(bill: { amount: number; amount_paid: number; credited_amount: number }): number {
   return bill.amount - bill.amount_paid - bill.credited_amount;
@@ -18,6 +19,7 @@ export function SupplierBillsPage() {
   const canSettle = can(user, "purchasing.settle");
   const [supplierId, setSupplierId] = useState("");
   const [status, setStatus] = useState("");
+  const filters = useTableFilters();
   const [selected, setSelected] = useState<string[]>([]);
   const [openedId, setOpenedId] = useState<string | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
@@ -25,11 +27,14 @@ export function SupplierBillsPage() {
 
   const suppliersQuery = useQuery({ queryKey: ["suppliers"], queryFn: () => listSuppliers() });
   const billsQuery = useQuery({
-    queryKey: ["supplier-bills", supplierId, status],
+    queryKey: ["supplier-bills", supplierId, status, filters.q, filters.on, filters.page],
     queryFn: () =>
       listSupplierBills({
         supplier_id: supplierId || undefined,
         status: status || undefined,
+        q: filters.q || undefined,
+        on: filters.on || undefined,
+        page: filters.page,
       }),
   });
 
@@ -83,6 +88,7 @@ export function SupplierBillsPage() {
               setSupplierId(event.target.value);
               setSelected([]);
               setOpenedId(null);
+              filters.setPage(1);
             }}
           >
             <option value="">All suppliers</option>
@@ -102,6 +108,7 @@ export function SupplierBillsPage() {
               setStatus(event.target.value);
               setSelected([]);
               setOpenedId(null);
+              filters.setPage(1);
             }}
           >
             <option value="">All statuses</option>
@@ -112,6 +119,27 @@ export function SupplierBillsPage() {
         </label>
       </div>
 
+      <TableToolbar
+        q={filters.q}
+        onQ={(value) => {
+          filters.setQ(value);
+          setSelected([]);
+          setOpenedId(null);
+        }}
+        date={filters.on}
+        onDate={(value) => {
+          filters.setOn(value);
+          setSelected([]);
+          setOpenedId(null);
+        }}
+        page={filters.page}
+        lastPage={billsQuery.data?.meta.last_page ?? 1}
+        onPage={(page) => {
+          filters.setPage(page);
+          setSelected([]);
+          setOpenedId(null);
+        }}
+      />
       {billsQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {billsQuery.isError ? <p className={styles.error}>{(billsQuery.error as Error).message}</p> : null}
       {billsQuery.data && bills.length === 0 ? <EmptyState>No supplier bills yet.</EmptyState> : null}

@@ -16,9 +16,10 @@ class CategoryController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $paginator = Category::query()
-            ->orderBy('name')
-            ->paginate($this->perPage($request));
+        $query = Category::query()->orderBy('name');
+        $this->whereLike($query, $request, ['name']);
+
+        $paginator = $query->paginate($this->perPage($request));
 
         return ApiResponse::paginated($paginator, CategoryResource::class);
     }

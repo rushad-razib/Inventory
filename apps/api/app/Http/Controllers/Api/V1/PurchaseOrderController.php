@@ -30,9 +30,8 @@ class PurchaseOrderController extends Controller
 
         $query = PurchaseOrder::query()->with(PurchaseOrder::apiRelations());
 
-        if ($request->filled('q')) {
-            $query->where('number', 'like', '%'.$request->string('q')->toString().'%');
-        }
+        $this->whereLike($query, $request, ['number']);
+        $this->whereOn($query, $request, 'created_at');
 
         if ($request->filled('filter.supplier_id')) {
             $query->where('supplier_id', $request->input('filter.supplier_id'));

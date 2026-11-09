@@ -24,6 +24,21 @@ class ReorderAlertController extends Controller
                 : null,
         );
 
+        $term = $this->term($request);
+        if ($term !== null) {
+            $needle = mb_strtolower($term);
+            $alerts = array_values(array_filter(
+                $alerts,
+                function (array $alert) use ($needle): bool {
+                    $product = $alert['product'] ?? [];
+                    $sku = mb_strtolower((string) ($product['sku'] ?? ''));
+                    $name = mb_strtolower((string) ($product['name'] ?? ''));
+
+                    return str_contains($sku, $needle) || str_contains($name, $needle);
+                },
+            ));
+        }
+
         $perPage = $this->perPage($request);
         $page = max(1, (int) $request->integer('page', 1));
         $slice = array_slice($alerts, ($page - 1) * $perPage, $perPage);

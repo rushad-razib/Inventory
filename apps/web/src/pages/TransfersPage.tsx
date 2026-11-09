@@ -17,6 +17,7 @@ import { useAuth } from "../lib/auth";
 import { prettyLabel } from "../lib/labels";
 import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 
 const schema = z
   .object({
@@ -51,8 +52,12 @@ export function TransfersPage() {
   const pin = user?.warehouse_id ?? null;
   const [mode, setMode] = useState<"send" | "request">("send");
 
-  const warehousesQuery = useQuery({ queryKey: ["warehouses"], queryFn: listWarehouses });
-  const transfersQuery = useQuery({ queryKey: ["transfers"], queryFn: listTransfers });
+  const warehousesQuery = useQuery({ queryKey: ["warehouses"], queryFn: () => listWarehouses() });
+  const filters = useTableFilters();
+  const transfersQuery = useQuery({
+    queryKey: ["transfers", filters.q, filters.on, filters.page],
+    queryFn: () => listTransfers(filters.table),
+  });
 
   const {
     register,
@@ -231,6 +236,16 @@ export function TransfersPage() {
       </header>
 
       <div className={styles.split}>
+        <div className={styles.stack}>
+        <TableToolbar
+          q={filters.q}
+          onQ={filters.setQ}
+          date={filters.on}
+          onDate={filters.setOn}
+          page={filters.page}
+          lastPage={transfersQuery.data?.meta.last_page ?? 1}
+          onPage={filters.setPage}
+        />
         <div className={styles.tableWrap}>
           {transfersQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
           {transfersQuery.isError ? (
@@ -280,6 +295,7 @@ export function TransfersPage() {
               </tbody>
             </table>
           ) : null}
+        </div>
         </div>
 
         <div className={styles.stack}>

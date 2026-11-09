@@ -5,19 +5,21 @@ import { prettyLabel } from "../lib/labels";
 import { useAuth } from "../lib/auth";
 import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 
 export function MovementsPage() {
   const { user } = useAuth();
   const [warehouseId, setWarehouseId] = useState(user?.warehouse_id ?? "");
+  const filters = useTableFilters();
 
   const warehousesQuery = useQuery({
     queryKey: ["warehouses"],
-    queryFn: listWarehouses,
+    queryFn: () => listWarehouses(),
   });
 
   const movementsQuery = useQuery({
-    queryKey: ["stock-movements", warehouseId],
-    queryFn: () => listStockMovements(warehouseId || undefined),
+    queryKey: ["stock-movements", warehouseId, filters.q, filters.on, filters.page],
+    queryFn: () => listStockMovements(warehouseId || undefined, filters.table),
   });
 
   return (
@@ -35,7 +37,10 @@ export function MovementsPage() {
           <select
             className={styles.select}
             value={warehouseId}
-            onChange={(event) => setWarehouseId(event.target.value)}
+            onChange={(event) => {
+              setWarehouseId(event.target.value);
+              filters.setPage(1);
+            }}
           >
             <option value="">All warehouses</option>
             {(warehousesQuery.data?.data ?? []).map((warehouse) => (
@@ -47,6 +52,15 @@ export function MovementsPage() {
         </label>
       </div>
 
+      <TableToolbar
+        q={filters.q}
+        onQ={filters.setQ}
+        date={filters.on}
+        onDate={filters.setOn}
+        page={filters.page}
+        lastPage={movementsQuery.data?.meta.last_page ?? 1}
+        onPage={filters.setPage}
+      />
       {movementsQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {movementsQuery.isError ? (
         <p className={styles.error}>{(movementsQuery.error as Error).message}</p>

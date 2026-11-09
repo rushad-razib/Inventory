@@ -4,19 +4,21 @@ import { listStockBalances, listWarehouses } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 
 export function StockPage() {
   const { user } = useAuth();
   const [warehouseId, setWarehouseId] = useState(user?.warehouse_id ?? "");
+  const filters = useTableFilters();
 
   const warehousesQuery = useQuery({
     queryKey: ["warehouses"],
-    queryFn: listWarehouses,
+    queryFn: () => listWarehouses(),
   });
 
   const balancesQuery = useQuery({
-    queryKey: ["stock-balances", warehouseId],
-    queryFn: () => listStockBalances(warehouseId),
+    queryKey: ["stock-balances", warehouseId, filters.q, filters.page],
+    queryFn: () => listStockBalances(warehouseId, filters.table),
     enabled: warehouseId !== "",
   });
 
@@ -37,7 +39,10 @@ export function StockPage() {
           <select
             className={styles.select}
             value={warehouseId}
-            onChange={(event) => setWarehouseId(event.target.value)}
+            onChange={(event) => {
+              setWarehouseId(event.target.value);
+              filters.setPage(1);
+            }}
           >
             <option value="">Choose a warehouse</option>
             {warehouses.map((warehouse) => (
@@ -49,6 +54,13 @@ export function StockPage() {
         </label>
       </div>
 
+      <TableToolbar
+        q={filters.q}
+        onQ={filters.setQ}
+        page={filters.page}
+        lastPage={balancesQuery.data?.meta.last_page ?? 1}
+        onPage={filters.setPage}
+      />
       {warehouseId === "" ? <p className={styles.muted}>Choose a warehouse to see stock.</p> : null}
       {balancesQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {balancesQuery.isError ? <p className={styles.error}>{(balancesQuery.error as Error).message}</p> : null}

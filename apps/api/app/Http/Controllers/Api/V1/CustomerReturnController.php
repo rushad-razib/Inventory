@@ -25,6 +25,16 @@ class CustomerReturnController extends Controller
 
         $query = CustomerReturn::query()->with(CustomerReturn::apiRelations());
 
+        $term = $this->term($request);
+        if ($term !== null) {
+            $like = $this->like($term);
+            $query->whereHas('sale', function ($sale) use ($like): void {
+                $sale->where('number', 'like', $like);
+            });
+        }
+
+        $this->whereOn($query, $request, 'created_at');
+
         if ($request->filled('filter.sale_id')) {
             $query->where('sale_id', $request->input('filter.sale_id'));
         }

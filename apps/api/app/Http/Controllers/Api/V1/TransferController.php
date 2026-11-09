@@ -32,6 +32,20 @@ class TransferController extends Controller
             $query->where('status', TransferStatus::fromLabel($request->string('filter.status')->toString()));
         }
 
+        $term = $this->term($request);
+        if ($term !== null) {
+            $like = $this->like($term);
+            $query->where(function ($inner) use ($like): void {
+                $match = function ($warehouse) use ($like): void {
+                    $warehouse->where('code', 'like', $like)->orWhere('name', 'like', $like);
+                };
+                $inner->whereHas('sourceWarehouse', $match)
+                    ->orWhereHas('destinationWarehouse', $match);
+            });
+        }
+
+        $this->whereOn($query, $request, 'created_at');
+
         $pin = $request->user()->warehouse_id;
         if ($pin !== null) {
             $query->where(function ($builder) use ($pin): void {

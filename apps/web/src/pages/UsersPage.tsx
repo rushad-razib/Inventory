@@ -17,6 +17,7 @@ import {
 import { confirmDelete, showWarning } from "../lib/dialogs";
 import { PasswordInput } from "../components/PasswordInput";
 import styles from "./catalog.module.css";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 
 const ROLES = ["Admin", "Manager", "Procurement", "Warehouse", "Cashier"] as const;
 
@@ -46,19 +47,20 @@ export function UsersPage() {
   const [saved, setSaved] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  const filters = useTableFilters();
   const usersQuery = useQuery({
-    queryKey: ["users"],
-    queryFn: listUsers,
+    queryKey: ["users", filters.q, filters.page],
+    queryFn: () => listUsers(filters.table),
   });
 
   const departmentsQuery = useQuery({
     queryKey: ["departments"],
-    queryFn: listDepartments,
+    queryFn: () => listDepartments(),
   });
 
   const warehousesQuery = useQuery({
     queryKey: ["warehouses"],
-    queryFn: listWarehouses,
+    queryFn: () => listWarehouses(),
   });
 
   const imagesQuery = useQuery({
@@ -193,6 +195,13 @@ export function UsersPage() {
 
       <div className={styles.split}>
         <div className={styles.stack}>
+          <TableToolbar
+            q={filters.q}
+            onQ={filters.setQ}
+            page={filters.page}
+            lastPage={usersQuery.data?.meta.last_page ?? 1}
+            onPage={filters.setPage}
+          />
           <div className={styles.tableWrap}>
             {usersQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
             {usersQuery.isError ? (

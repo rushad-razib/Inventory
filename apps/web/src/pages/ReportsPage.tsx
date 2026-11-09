@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   downloadReport,
   getDemandReport,
@@ -11,12 +11,14 @@ import {
   getSupplierSpendReport,
   listProducts,
   listWarehouses,
+  TABLE_PAGE_SIZE,
   type ReportGroup,
 } from "../lib/api";
 import { prettyLabel } from "../lib/labels";
 import { formatTaka } from "../lib/money";
 import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 
 type ReportId = "demand" | "roi" | "sales" | "stock" | "movements" | "supplier-spend" | "purchase-orders";
 
@@ -53,13 +55,14 @@ export function ReportsPage() {
   const [warehouseId, setWarehouseId] = useState("");
   const [productId, setProductId] = useState("");
   const [exportError, setExportError] = useState<string | null>(null);
+  const filters = useTableFilters();
   const needsRange = report === "demand" || report === "roi" || report === "sales";
   const needsGroup = report === "demand" || report === "roi";
   const needsMovement = report === "movements";
 
   const warehousesQuery = useQuery({
     queryKey: ["warehouses"],
-    queryFn: listWarehouses,
+    queryFn: () => listWarehouses(),
     enabled: needsMovement,
   });
   const productsQuery = useQuery({
@@ -82,6 +85,20 @@ export function ReportsPage() {
   }
 
   const table = reportQuery.data;
+  const matchedRows = useMemo(() => {
+    const rows = table?.rows ?? [];
+    const term = filters.q.trim().toLowerCase();
+    if (term === "") {
+      return rows;
+    }
+    return rows.filter((row) => row.some((cell) => cell.text.toLowerCase().includes(term)));
+  }, [table, filters.q]);
+  const lastPage = Math.max(1, Math.ceil(matchedRows.length / TABLE_PAGE_SIZE));
+  const pageRows = matchedRows.slice((filters.page - 1) * TABLE_PAGE_SIZE, filters.page * TABLE_PAGE_SIZE);
+
+  useEffect(() => {
+    filters.setPage(1);
+  }, [report, from, to, group, movementType, warehouseId, productId, filters.setPage]);
 
   return (
     <div className={styles.page}>
@@ -175,10 +192,17 @@ export function ReportsPage() {
       </div>
 
       {exportError ? <p className={styles.error}>{exportError}</p> : null}
+      <TableToolbar
+        q={filters.q}
+        onQ={filters.setQ}
+        page={filters.page}
+        lastPage={lastPage}
+        onPage={filters.setPage}
+      />
       {reportQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {reportQuery.isError ? <p className={styles.error}>{(reportQuery.error as Error).message}</p> : null}
-      {table && table.rows.length === 0 ? <EmptyState>No rows for this filter.</EmptyState> : null}
-      {table && table.rows.length > 0 ? (
+      {table && matchedRows.length === 0 ? <EmptyState>No rows for this filter.</EmptyState> : null}
+      {table && pageRows.length > 0 ? (
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
@@ -191,7 +215,7 @@ export function ReportsPage() {
               </tr>
             </thead>
             <tbody>
-              {table.rows.map((row, index) => (
+              {pageRows.map((row, index) => (
                 <tr key={index}>
                   {row.map((cell, cellIndex) => (
                     <td key={cellIndex} className={cell.money ? `mono ${styles.money}` : undefined}>

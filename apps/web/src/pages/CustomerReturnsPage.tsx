@@ -7,6 +7,7 @@ import { formatStoredRefund, formatTaka } from "../lib/money";
 import { can } from "../lib/permissions";
 import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 
 type DraftLine = { saleLineId: string; quantity: number; reason: "resaleable" | "damaged" };
 
@@ -16,8 +17,12 @@ export function CustomerReturnsPage() {
   const [saleId, setSaleId] = useState("");
   const [drafts, setDrafts] = useState<DraftLine[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const salesQuery = useQuery({ queryKey: ["sales"], queryFn: listSales });
-  const returnsQuery = useQuery({ queryKey: ["customer-returns"], queryFn: () => listCustomerReturns() });
+  const salesQuery = useQuery({ queryKey: ["sales"], queryFn: () => listSales() });
+  const filters = useTableFilters();
+  const returnsQuery = useQuery({
+    queryKey: ["customer-returns", "list", filters.q, filters.on, filters.page],
+    queryFn: () => listCustomerReturns(undefined, filters.table),
+  });
   const sales = (salesQuery.data?.data ?? []).filter((sale) => sale.status === "completed");
   const selected = sales.find((sale) => sale.id === saleId) ?? null;
   const returns = returnsQuery.data?.data ?? [];
@@ -78,6 +83,15 @@ export function CustomerReturnsPage() {
           <p className={styles.subtitle}>Request selected units. A manager approves. The till then pays the stored cash.</p>
         </div>
       </header>
+      <TableToolbar
+        q={filters.q}
+        onQ={filters.setQ}
+        date={filters.on}
+        onDate={filters.setOn}
+        page={filters.page}
+        lastPage={returnsQuery.data?.meta.last_page ?? 1}
+        onPage={filters.setPage}
+      />
       {returnsQuery.data && returns.length === 0 ? <EmptyState>No customer returns yet.</EmptyState> : null}
       {returns.length > 0 ? (
         <div className={styles.tableWrap}>

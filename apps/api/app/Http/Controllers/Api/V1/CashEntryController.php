@@ -26,6 +26,9 @@ class CashEntryController extends Controller
 
         $query = CashEntry::query()->with('actor')->orderByDesc('occurred_at');
 
+        $this->whereLike($query, $request, ['type']);
+        $this->whereOn($query, $request, 'occurred_at');
+
         if ($request->filled('filter.location')) {
             try {
                 $query->where(

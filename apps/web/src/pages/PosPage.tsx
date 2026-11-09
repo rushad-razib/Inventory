@@ -49,7 +49,7 @@ export function PosPage() {
   const drawer = drawerQuery.data ?? null;
   const warehousesQuery = useQuery({
     queryKey: ["warehouses"],
-    queryFn: listWarehouses,
+    queryFn: () => listWarehouses(),
     enabled: pin === null && drawer === null,
   });
   const stockQuery = useQuery({

@@ -28,6 +28,16 @@ class SupplierReturnController extends Controller
 
         $query = SupplierReturn::query()->with(SupplierReturn::apiRelations());
 
+        $term = $this->term($request);
+        if ($term !== null) {
+            $like = $this->like($term);
+            $query->whereHas('lot.product', function ($product) use ($like): void {
+                $product->where('sku', 'like', $like)->orWhere('name', 'like', $like);
+            });
+        }
+
+        $this->whereOn($query, $request, 'created_at');
+
         if ($request->filled('filter.status')) {
             try {
                 $query->where(

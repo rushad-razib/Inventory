@@ -339,6 +339,12 @@
   gap: 0.5rem;
 }
 
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .cartLine {
   display: flex;
   justify-content: space-between;

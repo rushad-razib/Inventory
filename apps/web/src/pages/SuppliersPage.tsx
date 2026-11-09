@@ -18,6 +18,7 @@ import { confirmDelete, showWarning } from "../lib/dialogs";
 import { useAuth } from "../lib/auth";
 import { can } from "../lib/permissions";
 import { formatTaka } from "../lib/money";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
 
@@ -53,19 +54,20 @@ export function SuppliersPage() {
   const [linkError, setLinkError] = useState<string | null>(null);
   const canManage = can(user, "suppliers.manage");
   const [searchParams] = useSearchParams();
-  const q = searchParams.get("q") ?? "";
+  const urlQ = searchParams.get("q") ?? "";
+  const filters = useTableFilters(urlQ);
 
   const suppliersQuery = useQuery({
-    queryKey: ["suppliers", q],
-    queryFn: () => listSuppliers(q || undefined),
+    queryKey: ["suppliers", filters.q, filters.page],
+    queryFn: () => listSuppliers(undefined, filters.table),
   });
 
   useEffect(() => {
     const first = suppliersQuery.data?.data[0];
-    if (q && first) {
+    if (urlQ && first) {
       setSelectedId(first.id);
     }
-  }, [q, suppliersQuery.data]);
+  }, [urlQ, suppliersQuery.data]);
 
   const productsQuery = useQuery({
     queryKey: ["products"],
@@ -215,6 +217,13 @@ export function SuppliersPage() {
 
       <div className={styles.split}>
         <div className={styles.stack}>
+          <TableToolbar
+            q={filters.q}
+            onQ={filters.setQ}
+            page={filters.page}
+            lastPage={suppliersQuery.data?.meta.last_page ?? 1}
+            onPage={filters.setPage}
+          />
           <div className={styles.tableWrap}>
             {suppliersQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
             {suppliersQuery.isError ? (

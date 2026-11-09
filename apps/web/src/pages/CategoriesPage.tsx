@@ -8,6 +8,7 @@ import { confirmDelete, showWarning } from "../lib/dialogs";
 import { useAuth } from "../lib/auth";
 import { can } from "../lib/permissions";
 import styles from "./catalog.module.css";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -25,9 +26,10 @@ export function CategoriesPage() {
   const [saved, setSaved] = useState(false);
   const canManage = can(user, "catalog.manage");
 
+  const filters = useTableFilters();
   const categoriesQuery = useQuery({
-    queryKey: ["categories"],
-    queryFn: listCategories,
+    queryKey: ["categories", filters.q, filters.page],
+    queryFn: () => listCategories(filters.table),
   });
 
   const {
@@ -114,6 +116,14 @@ export function CategoriesPage() {
       </header>
 
       <div className={styles.split}>
+        <div className={styles.stack}>
+        <TableToolbar
+          q={filters.q}
+          onQ={filters.setQ}
+          page={filters.page}
+          lastPage={categoriesQuery.data?.meta.last_page ?? 1}
+          onPage={filters.setPage}
+        />
         <div className={styles.tableWrap}>
           {categoriesQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
           {categoriesQuery.isError ? (
@@ -143,6 +153,7 @@ export function CategoriesPage() {
               </tbody>
             </table>
           ) : null}
+        </div>
         </div>
 
         {canManage ? (

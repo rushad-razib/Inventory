@@ -3,6 +3,7 @@ import { useState } from "react";
 import { createPurchaseOrdersFromAlerts, listReorderAlerts } from "../lib/api";
 import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 
 function alertKey(warehouseId: string, productId: string): string {
   return `${warehouseId}|${productId}`;
@@ -12,7 +13,11 @@ export function ReorderAlertsPage() {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
-  const alertsQuery = useQuery({ queryKey: ["reorder-alerts"], queryFn: listReorderAlerts });
+  const filters = useTableFilters();
+  const alertsQuery = useQuery({
+    queryKey: ["reorder-alerts", filters.q, filters.page],
+    queryFn: () => listReorderAlerts(filters.table),
+  });
   const alerts = alertsQuery.data?.data ?? [];
 
   const createMutation = useMutation({
@@ -43,6 +48,13 @@ export function ReorderAlertsPage() {
           <p className={styles.subtitle}>On hand at or below the reorder point. Creating drafts does not submit them.</p>
         </div>
       </header>
+      <TableToolbar
+        q={filters.q}
+        onQ={filters.setQ}
+        page={filters.page}
+        lastPage={alertsQuery.data?.meta.last_page ?? 1}
+        onPage={filters.setPage}
+      />
       {alertsQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {alertsQuery.isError ? <p className={styles.error}>{(alertsQuery.error as Error).message}</p> : null}
       {alertsQuery.data && alerts.length === 0 ? <EmptyState>No products need reordering.</EmptyState> : null}

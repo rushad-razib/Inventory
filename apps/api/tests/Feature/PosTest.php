@@ -499,6 +499,33 @@ it('keeps a pinned cashier inside their warehouse', function () {
         ->assertForbidden();
 });
 
+it('pages sales by six and finds one by number and day', function () {
+    $warehouse = posWarehouse('STORE');
+    $product = posProduct('SOAP', 100);
+    posLot($warehouse, $product, null, LotOwnership::Owned, 40, 5, now());
+    $cashier = posUser('Cashier');
+
+    $sale = postedSale($cashier, $warehouse, $product, null, 1, [['type' => 'cash', 'amount' => 100]], 'paged-sale');
+
+    $this->actingAs($cashier)->getJson('/api/v1/sales?'.http_build_query([
+        'per_page' => 6,
+        'q' => $sale['number'],
+        'filter' => ['on' => now()->toDateString()],
+    ]))
+        ->assertOk()
+        ->assertJsonPath('meta.per_page', 6)
+        ->assertJsonPath('data.0.number', $sale['number'])
+        ->assertJsonCount(1, 'data');
+
+    $this->actingAs($cashier)->getJson('/api/v1/sales?'.http_build_query([
+        'per_page' => 6,
+        'q' => $sale['number'],
+        'filter' => ['on' => now()->subDay()->toDateString()],
+    ]))
+        ->assertOk()
+        ->assertJsonCount(0, 'data');
+});
+
 function posWarehouse(string $code): Warehouse
 {
     return Warehouse::query()->create([

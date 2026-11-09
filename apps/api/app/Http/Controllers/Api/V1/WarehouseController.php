@@ -20,9 +20,10 @@ class WarehouseController extends Controller
             return $this->forbidden('You do not have permission to list warehouses.');
         }
 
-        $paginator = Warehouse::query()
-            ->orderBy('code')
-            ->paginate($this->perPage($request));
+        $query = Warehouse::query()->orderBy('code');
+        $this->whereLike($query, $request, ['code', 'name']);
+
+        $paginator = $query->paginate($this->perPage($request));
 
         return ApiResponse::paginated($paginator, WarehouseResource::class);
     }

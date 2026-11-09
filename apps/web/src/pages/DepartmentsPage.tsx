@@ -6,6 +6,7 @@ import { useState } from "react";
 import { createDepartment, deleteDepartment, listDepartments } from "../lib/api";
 import { confirmDelete, showWarning } from "../lib/dialogs";
 import styles from "./catalog.module.css";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -18,9 +19,10 @@ export function DepartmentsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
+  const filters = useTableFilters();
   const departmentsQuery = useQuery({
-    queryKey: ["departments"],
-    queryFn: listDepartments,
+    queryKey: ["departments", filters.q, filters.page],
+    queryFn: () => listDepartments(filters.table),
   });
 
   const {
@@ -67,6 +69,14 @@ export function DepartmentsPage() {
       </header>
 
       <div className={styles.split}>
+        <div className={styles.stack}>
+        <TableToolbar
+          q={filters.q}
+          onQ={filters.setQ}
+          page={filters.page}
+          lastPage={departmentsQuery.data?.meta.last_page ?? 1}
+          onPage={filters.setPage}
+        />
         <div className={styles.tableWrap}>
           {departmentsQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
           {departmentsQuery.isError ? (
@@ -94,6 +104,7 @@ export function DepartmentsPage() {
               </tbody>
             </table>
           ) : null}
+        </div>
         </div>
 
         <section className={styles.panel}>

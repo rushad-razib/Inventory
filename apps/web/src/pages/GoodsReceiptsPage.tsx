@@ -18,6 +18,7 @@ import { prettyLabel } from "../lib/labels";
 import { formatTaka } from "../lib/money";
 import { can } from "../lib/permissions";
 import { EmptyState } from "./EmptyState";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 import styles from "./catalog.module.css";
 
 const consignSchema = z.object({
@@ -46,10 +47,14 @@ export function GoodsReceiptsPage() {
   const pin = user?.warehouse_id ?? null;
   const canReceive = can(user, "purchasing.receive");
 
-  const receiptsQuery = useQuery({ queryKey: ["goods-receipts"], queryFn: listGoodsReceipts });
+  const filters = useTableFilters();
+  const receiptsQuery = useQuery({
+    queryKey: ["goods-receipts", filters.q, filters.on, filters.page],
+    queryFn: () => listGoodsReceipts(filters.table),
+  });
   const ordersQuery = useQuery({ queryKey: ["purchase-orders"], queryFn: () => listPurchaseOrders(), enabled: canReceive });
   const suppliersQuery = useQuery({ queryKey: ["suppliers"], queryFn: () => listSuppliers(), enabled: canReceive });
-  const warehousesQuery = useQuery({ queryKey: ["warehouses"], queryFn: listWarehouses, enabled: canReceive });
+  const warehousesQuery = useQuery({ queryKey: ["warehouses"], queryFn: () => listWarehouses(), enabled: canReceive });
   const productsQuery = useQuery({ queryKey: ["products"], queryFn: () => listProducts(), enabled: canReceive });
 
   const receipts = receiptsQuery.data?.data ?? [];
@@ -184,6 +189,16 @@ export function GoodsReceiptsPage() {
         </div>
       </header>
       <div className={styles.split}>
+        <div className={styles.stack}>
+        <TableToolbar
+          q={filters.q}
+          onQ={filters.setQ}
+          date={filters.on}
+          onDate={filters.setOn}
+          page={filters.page}
+          lastPage={receiptsQuery.data?.meta.last_page ?? 1}
+          onPage={filters.setPage}
+        />
         <div className={styles.tableWrap}>
           {receiptsQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
           {receiptsQuery.isError ? <p className={styles.error}>{(receiptsQuery.error as Error).message}</p> : null}
@@ -214,6 +229,7 @@ export function GoodsReceiptsPage() {
               </tbody>
             </table>
           ) : null}
+        </div>
         </div>
         <div className={styles.stack}>
           {selected ? <ReceiptDetail receipt={selected} /> : null}

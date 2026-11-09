@@ -35,6 +35,14 @@ class StockController extends Controller
             $query->where('product_id', $request->input('filter.product_id'));
         }
 
+        $term = $this->term($request);
+        if ($term !== null) {
+            $like = $this->like($term);
+            $query->whereHas('product', function ($product) use ($like): void {
+                $product->where('sku', 'like', $like)->orWhere('name', 'like', $like);
+            });
+        }
+
         return ApiResponse::paginated(
             $query->orderBy('warehouse_id')->paginate($this->perPage($request)),
             StockBalanceResource::class,
@@ -69,6 +77,16 @@ class StockController extends Controller
             }
         }
 
+        $term = $this->term($request);
+        if ($term !== null) {
+            $like = $this->like($term);
+            $query->whereHas('product', function ($product) use ($like): void {
+                $product->where('sku', 'like', $like)->orWhere('name', 'like', $like);
+            });
+        }
+
+        $this->whereOn($query, $request, 'received_at');
+
         return ApiResponse::paginated(
             $query->orderBy('received_at')->paginate($this->perPage($request)),
             StockLotResource::class,
@@ -98,6 +116,16 @@ class StockController extends Controller
                 return $this->badFilter('type');
             }
         }
+
+        $term = $this->term($request);
+        if ($term !== null) {
+            $like = $this->like($term);
+            $query->whereHas('product', function ($product) use ($like): void {
+                $product->where('sku', 'like', $like)->orWhere('name', 'like', $like);
+            });
+        }
+
+        $this->whereOn($query, $request, 'occurred_at');
 
         if ($request->filled('filter.from')) {
             $query->where('occurred_at', '>=', $request->date('filter.from'));

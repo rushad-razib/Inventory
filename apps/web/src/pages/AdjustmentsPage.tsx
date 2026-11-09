@@ -17,6 +17,7 @@ import { prettyLabel } from "../lib/labels";
 import { can } from "../lib/permissions";
 import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 
 const schema = z
   .object({
@@ -42,11 +43,12 @@ export function AdjustmentsPage() {
   const canCreate = can(user, "inventory.adjust");
   const canApprove = can(user, "purchasing.approve");
 
-  const warehousesQuery = useQuery({ queryKey: ["warehouses"], queryFn: listWarehouses });
+  const warehousesQuery = useQuery({ queryKey: ["warehouses"], queryFn: () => listWarehouses() });
   const productsQuery = useQuery({ queryKey: ["products"], queryFn: () => listProducts() });
+  const filters = useTableFilters();
   const adjustmentsQuery = useQuery({
-    queryKey: ["adjustments", pin],
-    queryFn: () => listAdjustments(pin ?? undefined),
+    queryKey: ["adjustments", pin, filters.q, filters.on, filters.page],
+    queryFn: () => listAdjustments(pin ?? undefined, filters.table),
   });
 
   const {
@@ -126,6 +128,16 @@ export function AdjustmentsPage() {
       </header>
 
       <div className={styles.split}>
+        <div className={styles.stack}>
+        <TableToolbar
+          q={filters.q}
+          onQ={filters.setQ}
+          date={filters.on}
+          onDate={filters.setOn}
+          page={filters.page}
+          lastPage={adjustmentsQuery.data?.meta.last_page ?? 1}
+          onPage={filters.setPage}
+        />
         <div className={styles.tableWrap}>
           {adjustmentsQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
           {adjustmentsQuery.isError ? (
@@ -167,6 +179,7 @@ export function AdjustmentsPage() {
               </tbody>
             </table>
           ) : null}
+        </div>
         </div>
 
         <div className={styles.stack}>

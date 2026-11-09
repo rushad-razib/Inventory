@@ -9,6 +9,7 @@ import { useAuth } from "../lib/auth";
 import { can } from "../lib/permissions";
 import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 
 const schema = z.object({
   code: z.string().min(1, "Code is required"),
@@ -30,9 +31,10 @@ export function WarehousesPage() {
   const canCreate = can(user, "settings.manage");
   const canViewStock = can(user, "inventory.view");
 
+  const filters = useTableFilters();
   const warehousesQuery = useQuery({
-    queryKey: ["warehouses"],
-    queryFn: listWarehouses,
+    queryKey: ["warehouses", filters.q, filters.page],
+    queryFn: () => listWarehouses(filters.table),
   });
 
   const stockQuery = useQuery({
@@ -139,6 +141,13 @@ export function WarehousesPage() {
 
       <div className={styles.split}>
         <div className={styles.stack}>
+          <TableToolbar
+            q={filters.q}
+            onQ={filters.setQ}
+            page={filters.page}
+            lastPage={warehousesQuery.data?.meta.last_page ?? 1}
+            onPage={filters.setPage}
+          />
           <div className={styles.tableWrap}>
             {warehousesQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
             {warehousesQuery.isError ? (

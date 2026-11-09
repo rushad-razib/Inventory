@@ -19,6 +19,7 @@ import {
   type PurchaseOrder,
 } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 import { prettyLabel } from "../lib/labels";
 import { formatTaka } from "../lib/money";
 import { can } from "../lib/permissions";
@@ -59,21 +60,22 @@ export function PurchaseOrdersPage() {
   const canCreate = can(user, "purchasing.create");
   const canApprove = can(user, "purchasing.approve");
   const [searchParams] = useSearchParams();
-  const q = searchParams.get("q") ?? "";
+  const urlQ = searchParams.get("q") ?? "";
+  const filters = useTableFilters(urlQ);
 
   const ordersQuery = useQuery({
-    queryKey: ["purchase-orders", q],
-    queryFn: () => listPurchaseOrders(q || undefined),
+    queryKey: ["purchase-orders", filters.q, filters.on, filters.page],
+    queryFn: () => listPurchaseOrders(undefined, filters.table),
   });
 
   useEffect(() => {
     const first = ordersQuery.data?.data[0];
-    if (q && first) {
+    if (urlQ && first) {
       setSelectedId(first.id);
     }
-  }, [q, ordersQuery.data]);
+  }, [urlQ, ordersQuery.data]);
   const suppliersQuery = useQuery({ queryKey: ["suppliers"], queryFn: () => listSuppliers() });
-  const warehousesQuery = useQuery({ queryKey: ["warehouses"], queryFn: listWarehouses });
+  const warehousesQuery = useQuery({ queryKey: ["warehouses"], queryFn: () => listWarehouses() });
   const productsQuery = useQuery({ queryKey: ["products"], queryFn: () => listProducts() });
 
   const {
@@ -188,6 +190,16 @@ export function PurchaseOrdersPage() {
       </header>
 
       <div className={styles.split}>
+        <div className={styles.stack}>
+        <TableToolbar
+          q={filters.q}
+          onQ={filters.setQ}
+          date={filters.on}
+          onDate={filters.setOn}
+          page={filters.page}
+          lastPage={ordersQuery.data?.meta.last_page ?? 1}
+          onPage={filters.setPage}
+        />
         <div className={styles.tableWrap}>
           {ordersQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
           {ordersQuery.isError ? <p className={styles.error}>{(ordersQuery.error as Error).message}</p> : null}
@@ -223,6 +235,7 @@ export function PurchaseOrdersPage() {
               </tbody>
             </table>
           ) : null}
+        </div>
         </div>
 
         <div className={styles.stack}>

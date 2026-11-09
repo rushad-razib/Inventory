@@ -26,6 +26,16 @@ class SupplierBillController extends Controller
 
         $query = SupplierBill::query()->with($this->billRelations());
 
+        $term = $this->term($request);
+        if ($term !== null) {
+            $like = $this->like($term);
+            $query->whereHas('supplier', function ($supplier) use ($like): void {
+                $supplier->where('name', 'like', $like)->orWhere('code', 'like', $like);
+            });
+        }
+
+        $this->whereOn($query, $request, 'created_at');
+
         if ($request->filled('filter.supplier_id')) {
             $query->where('supplier_id', $request->input('filter.supplier_id'));
         }

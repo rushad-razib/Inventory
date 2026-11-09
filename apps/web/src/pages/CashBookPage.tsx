@@ -7,6 +7,7 @@ import { formatTaka } from "../lib/money";
 import { can } from "../lib/permissions";
 import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 
 type LocationFilter = "" | "cash" | "bank" | "drawer";
 
@@ -14,6 +15,7 @@ export function CashBookPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [location, setLocation] = useState<LocationFilter>("");
+  const filters = useTableFilters();
   const [pot, setPot] = useState<"cash" | "bank">("cash");
   const [direction, setDirection] = useState<"in" | "out">("in");
   const [amount, setAmount] = useState("");
@@ -21,8 +23,8 @@ export function CashBookPage() {
   const [error, setError] = useState<string | null>(null);
   const balancesQuery = useQuery({ queryKey: ["cash-balances"], queryFn: getCashBalances });
   const entriesQuery = useQuery({
-    queryKey: ["cash-entries", location],
-    queryFn: () => listCashEntries(location || undefined),
+    queryKey: ["cash-entries", location, filters.q, filters.on, filters.page],
+    queryFn: () => listCashEntries(location || undefined, filters.table),
   });
   const entries = entriesQuery.data?.data ?? [];
   const balances = balancesQuery.data;
@@ -138,13 +140,25 @@ export function CashBookPage() {
             key={label}
             type="button"
             className={location === value ? styles.button : styles.buttonSecondary}
-            onClick={() => setLocation(value)}
+            onClick={() => {
+              setLocation(value);
+              filters.setPage(1);
+            }}
           >
             {label}
           </button>
         ))}
       </div>
 
+      <TableToolbar
+        q={filters.q}
+        onQ={filters.setQ}
+        date={filters.on}
+        onDate={filters.setOn}
+        page={filters.page}
+        lastPage={entriesQuery.data?.meta.last_page ?? 1}
+        onPage={filters.setPage}
+      />
       {entriesQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {entriesQuery.isError ? <p className={styles.error}>{(entriesQuery.error as Error).message}</p> : null}
       {entriesQuery.data && entries.length === 0 ? <EmptyState>No cash entries yet.</EmptyState> : null}

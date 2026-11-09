@@ -20,10 +20,12 @@ class UserController extends Controller
             return $this->forbidden('You do not have permission to list users.');
         }
 
-        $paginator = User::query()
+        $query = User::query()
             ->with(['roles', 'permissions', 'department'])
-            ->orderBy('name')
-            ->paginate($this->perPage($request));
+            ->orderBy('name');
+        $this->whereLike($query, $request, ['name', 'email']);
+
+        $paginator = $query->paginate($this->perPage($request));
 
         return ApiResponse::paginated($paginator, UserResource::class);
     }

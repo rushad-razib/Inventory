@@ -21,6 +21,9 @@ class AuditLogController extends Controller
 
         $query = AuditLog::query()->with('actor')->orderByDesc('created_at');
 
+        $this->whereLike($query, $request, ['action', 'auditable_type']);
+        $this->whereOn($query, $request, 'created_at');
+
         if ($request->filled('filter.actor_id')) {
             $query->where('actor_id', $request->input('filter.actor_id'));
         }

@@ -6,19 +6,21 @@ import { formatTaka } from "../lib/money";
 import { useAuth } from "../lib/auth";
 import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 
 export function LotsPage() {
   const { user } = useAuth();
   const [warehouseId, setWarehouseId] = useState(user?.warehouse_id ?? "");
+  const filters = useTableFilters();
 
   const warehousesQuery = useQuery({
     queryKey: ["warehouses"],
-    queryFn: listWarehouses,
+    queryFn: () => listWarehouses(),
   });
 
   const lotsQuery = useQuery({
-    queryKey: ["stock-lots", warehouseId],
-    queryFn: () => listStockLots(warehouseId || undefined),
+    queryKey: ["stock-lots", warehouseId, filters.q, filters.on, filters.page],
+    queryFn: () => listStockLots(warehouseId || undefined, filters.table),
   });
 
   return (
@@ -36,7 +38,10 @@ export function LotsPage() {
           <select
             className={styles.select}
             value={warehouseId}
-            onChange={(event) => setWarehouseId(event.target.value)}
+            onChange={(event) => {
+              setWarehouseId(event.target.value);
+              filters.setPage(1);
+            }}
           >
             <option value="">All warehouses</option>
             {(warehousesQuery.data?.data ?? []).map((warehouse) => (
@@ -48,6 +53,15 @@ export function LotsPage() {
         </label>
       </div>
 
+      <TableToolbar
+        q={filters.q}
+        onQ={filters.setQ}
+        date={filters.on}
+        onDate={filters.setOn}
+        page={filters.page}
+        lastPage={lotsQuery.data?.meta.last_page ?? 1}
+        onPage={filters.setPage}
+      />
       {lotsQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {lotsQuery.isError ? <p className={styles.error}>{(lotsQuery.error as Error).message}</p> : null}
       {lotsQuery.data && lotsQuery.data.data.length === 0 ? <EmptyState>No lots yet.</EmptyState> : null}

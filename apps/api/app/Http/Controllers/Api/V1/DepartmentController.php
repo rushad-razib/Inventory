@@ -16,9 +16,10 @@ class DepartmentController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $paginator = Department::query()
-            ->orderBy('name')
-            ->paginate($this->perPage($request));
+        $query = Department::query()->orderBy('name');
+        $this->whereLike($query, $request, ['name']);
+
+        $paginator = $query->paginate($this->perPage($request));
 
         return ApiResponse::paginated($paginator, DepartmentResource::class);
     }

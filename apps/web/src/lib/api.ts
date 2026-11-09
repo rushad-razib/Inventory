@@ -26,6 +26,30 @@ export type PaginatedMeta = {
   last_page: number;
 };
 
+export const TABLE_PAGE_SIZE = 6;
+
+export type TableQuery = {
+  q?: string;
+  page?: number;
+  on?: string;
+};
+
+type ListedQuery = {
+  q?: string;
+  page?: number;
+  per_page?: number;
+  "filter[on]"?: string;
+};
+
+export function listedQuery(table?: TableQuery, q?: string): ListedQuery {
+  const term = table?.q ?? q;
+  return {
+    ...(term ? { q: term } : {}),
+    ...(table?.on ? { "filter[on]": table.on } : {}),
+    ...(table?.page !== undefined ? { page: table.page, per_page: TABLE_PAGE_SIZE } : {}),
+  };
+}
+
 export type Product = {
   id: string;
   sku: string;
@@ -274,9 +298,9 @@ export async function updateProfile(body: {
   return toAuthUser(payload.data as unknown as AuthUser);
 }
 
-export async function listProducts(q?: string): Promise<{ data: Product[]; meta: PaginatedMeta }> {
+export async function listProducts(q?: string, table?: TableQuery): Promise<{ data: Product[]; meta: PaginatedMeta }> {
   const { data, error, response } = await apiClient.GET("/v1/products", {
-    params: { query: q ? { q } : undefined },
+    params: { query: listedQuery(table, q) as never },
   });
   const payload = assertData(data, error, response.status);
   return {
@@ -384,8 +408,10 @@ export async function uploadProductImage(productId: string, file: File): Promise
   return payload.data as unknown as ImageAsset;
 }
 
-export async function listCategories(): Promise<{ data: Category[]; meta: PaginatedMeta }> {
-  const { data, error, response } = await apiClient.GET("/v1/categories");
+export async function listCategories(table?: TableQuery): Promise<{ data: Category[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/categories", {
+    params: { query: listedQuery(table) as never },
+  });
   const payload = assertData(data, error, response.status);
   return {
     data: payload.data as unknown as Category[],
@@ -418,8 +444,10 @@ export async function deleteCategory(id: string): Promise<void> {
   assertData(data, error, response.status);
 }
 
-export async function listWarehouses(): Promise<{ data: Warehouse[]; meta: PaginatedMeta }> {
-  const { data, error, response } = await apiClient.GET("/v1/warehouses");
+export async function listWarehouses(table?: TableQuery): Promise<{ data: Warehouse[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/warehouses", {
+    params: { query: listedQuery(table) as never },
+  });
   const payload = assertData(data, error, response.status);
   return {
     data: payload.data as unknown as Warehouse[],
@@ -457,9 +485,9 @@ export async function deleteWarehouse(id: string): Promise<void> {
   assertData(data, error, response.status);
 }
 
-export async function listSuppliers(q?: string): Promise<{ data: Supplier[]; meta: PaginatedMeta }> {
+export async function listSuppliers(q?: string, table?: TableQuery): Promise<{ data: Supplier[]; meta: PaginatedMeta }> {
   const { data, error, response } = await apiClient.GET("/v1/suppliers", {
-    params: { query: q ? { q } : undefined },
+    params: { query: listedQuery(table, q) as never },
   });
   const payload = assertData(data, error, response.status);
   return {
@@ -529,9 +557,9 @@ export async function createSupplierProduct(
   return payload.data as unknown as SupplierProduct;
 }
 
-export async function listCustomers(q?: string): Promise<{ data: Customer[]; meta: PaginatedMeta }> {
+export async function listCustomers(q?: string, table?: TableQuery): Promise<{ data: Customer[]; meta: PaginatedMeta }> {
   const { data, error, response } = await apiClient.GET("/v1/customers", {
-    params: { query: q ? { q } : undefined },
+    params: { query: listedQuery(table, q) as never },
   });
   const payload = assertData(data, error, response.status);
   return {
@@ -564,8 +592,10 @@ export async function lookupCustomer(mobile: string): Promise<Customer | null> {
   return payload.data as unknown as Customer | null;
 }
 
-export async function listUsers(): Promise<{ data: CatalogUser[]; meta: PaginatedMeta }> {
-  const { data, error, response } = await apiClient.GET("/v1/users");
+export async function listUsers(table?: TableQuery): Promise<{ data: CatalogUser[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/users", {
+    params: { query: listedQuery(table) as never },
+  });
   const payload = assertData(data, error, response.status);
   return {
     data: payload.data as unknown as CatalogUser[],
@@ -627,8 +657,10 @@ export async function uploadUserImage(userId: string, file: File): Promise<Image
   return payload.data as unknown as ImageAsset;
 }
 
-export async function listDepartments(): Promise<{ data: Department[]; meta: PaginatedMeta }> {
-  const { data, error, response } = await apiClient.GET("/v1/departments");
+export async function listDepartments(table?: TableQuery): Promise<{ data: Department[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/departments", {
+    params: { query: listedQuery(table) as never },
+  });
   const payload = assertData(data, error, response.status);
   return {
     data: payload.data as unknown as Department[],
@@ -833,9 +865,10 @@ type StockBalanceQuery = {
 
 export async function listStockBalances(
   warehouseId: string,
+  table?: TableQuery,
 ): Promise<{ data: StockBalance[]; meta: PaginatedMeta }> {
   const { data, error, response } = await apiClient.GET("/v1/stock-balances", {
-    params: { query: { "filter[warehouse_id]": warehouseId } },
+    params: { query: { "filter[warehouse_id]": warehouseId, ...listedQuery(table) } as never },
   });
   const payload = assertData(data, error, response.status);
   return {
@@ -886,10 +919,14 @@ async function listStockBalancesPage(
 
 export async function listStockLots(
   warehouseId?: string,
+  table?: TableQuery,
 ): Promise<{ data: StockLot[]; meta: PaginatedMeta }> {
   const { data, error, response } = await apiClient.GET("/v1/stock-lots", {
     params: {
-      query: warehouseId ? { "filter[warehouse_id]": warehouseId } : {},
+      query: {
+        ...(warehouseId ? { "filter[warehouse_id]": warehouseId } : {}),
+        ...listedQuery(table),
+      } as never,
     },
   });
   const payload = assertData(data, error, response.status);
@@ -901,10 +938,14 @@ export async function listStockLots(
 
 export async function listStockMovements(
   warehouseId?: string,
+  table?: TableQuery,
 ): Promise<{ data: StockMovement[]; meta: PaginatedMeta }> {
   const { data, error, response } = await apiClient.GET("/v1/stock-movements", {
     params: {
-      query: warehouseId ? { "filter[warehouse_id]": warehouseId } : {},
+      query: {
+        ...(warehouseId ? { "filter[warehouse_id]": warehouseId } : {}),
+        ...listedQuery(table),
+      } as never,
     },
   });
   const payload = assertData(data, error, response.status);
@@ -914,8 +955,10 @@ export async function listStockMovements(
   };
 }
 
-export async function listTransfers(): Promise<{ data: Transfer[]; meta: PaginatedMeta }> {
-  const { data, error, response } = await apiClient.GET("/v1/transfers");
+export async function listTransfers(table?: TableQuery): Promise<{ data: Transfer[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/transfers", {
+    params: { query: listedQuery(table) as never },
+  });
   const payload = assertData(data, error, response.status);
   return {
     data: payload.data as unknown as Transfer[],
@@ -959,10 +1002,14 @@ export function cancelTransfer(id: string): Promise<Transfer> {
 
 export async function listAdjustments(
   warehouseId?: string,
+  table?: TableQuery,
 ): Promise<{ data: Adjustment[]; meta: PaginatedMeta }> {
   const { data, error, response } = await apiClient.GET("/v1/adjustments", {
     params: {
-      query: warehouseId ? { "filter[warehouse_id]": warehouseId } : {},
+      query: {
+        ...(warehouseId ? { "filter[warehouse_id]": warehouseId } : {}),
+        ...listedQuery(table),
+      } as never,
     },
   });
   const payload = assertData(data, error, response.status);
@@ -1185,9 +1232,9 @@ export type Approvals = {
   customer_returns: CustomerReturn[];
 };
 
-export async function listPurchaseOrders(q?: string): Promise<{ data: PurchaseOrder[]; meta: PaginatedMeta }> {
+export async function listPurchaseOrders(q?: string, table?: TableQuery): Promise<{ data: PurchaseOrder[]; meta: PaginatedMeta }> {
   const { data, error, response } = await apiClient.GET("/v1/purchase-orders", {
-    params: { query: q ? { q } : undefined },
+    params: { query: listedQuery(table, q) as never },
   });
   const payload = assertData(data, error, response.status);
   return {
@@ -1253,8 +1300,10 @@ export async function createPurchaseOrdersFromAlerts(lines: {
   return payload.data as unknown as PurchaseOrder[];
 }
 
-export async function listReorderAlerts(): Promise<{ data: ReorderAlert[]; meta: PaginatedMeta }> {
-  const { data, error, response } = await apiClient.GET("/v1/reorder-alerts");
+export async function listReorderAlerts(table?: TableQuery): Promise<{ data: ReorderAlert[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/reorder-alerts", {
+    params: { query: listedQuery(table) as never },
+  });
   const payload = assertData(data, error, response.status);
   return {
     data: payload.data as unknown as ReorderAlert[],
@@ -1262,8 +1311,10 @@ export async function listReorderAlerts(): Promise<{ data: ReorderAlert[]; meta:
   };
 }
 
-export async function listGoodsReceipts(): Promise<{ data: GoodsReceipt[]; meta: PaginatedMeta }> {
-  const { data, error, response } = await apiClient.GET("/v1/goods-receipts");
+export async function listGoodsReceipts(table?: TableQuery): Promise<{ data: GoodsReceipt[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/goods-receipts", {
+    params: { query: listedQuery(table) as never },
+  });
   const payload = assertData(data, error, response.status);
   return {
     data: payload.data as unknown as GoodsReceipt[],
@@ -1294,11 +1345,14 @@ export async function listApprovals(): Promise<Approvals> {
 export async function listSupplierBills(filters?: {
   supplier_id?: string;
   status?: string;
+  q?: string;
+  page?: number;
+  on?: string;
 }): Promise<{ data: SupplierBill[]; meta: PaginatedMeta }> {
   const query: {
     "filter[supplier_id]"?: string;
     "filter[status]"?: string;
-  } = {};
+  } & ListedQuery = { ...listedQuery(filters) };
   if (filters?.supplier_id) {
     query["filter[supplier_id]"] = filters.supplier_id;
   }
@@ -1307,7 +1361,7 @@ export async function listSupplierBills(filters?: {
   }
 
   const { data, error, response } = await apiClient.GET("/v1/supplier-bills", {
-    params: { query },
+    params: { query: query as never },
   });
   const payload = assertData(data, error, response.status);
   return {
@@ -1357,8 +1411,10 @@ export type SupplierReturn = {
   refund_receivable: { id: string; amount: number; status: string } | null;
 };
 
-export async function listSupplierReturns(): Promise<{ data: SupplierReturn[]; meta: PaginatedMeta }> {
-  const { data, error, response } = await apiClient.GET("/v1/supplier-returns");
+export async function listSupplierReturns(table?: TableQuery): Promise<{ data: SupplierReturn[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/supplier-returns", {
+    params: { query: listedQuery(table) as never },
+  });
   const payload = assertData(data, error, response.status);
   return {
     data: payload.data as unknown as SupplierReturn[],
@@ -1445,10 +1501,14 @@ export type DrawerSession = {
 
 export async function listCashEntries(
   location?: "cash" | "bank" | "drawer",
+  table?: TableQuery,
 ): Promise<{ data: CashEntry[]; meta: PaginatedMeta }> {
   const { data, error, response } = await apiClient.GET("/v1/cash-entries", {
     params: {
-      query: location ? { "filter[location]": location } : {},
+      query: {
+        ...(location ? { "filter[location]": location } : {}),
+        ...listedQuery(table),
+      } as never,
     },
   });
   const payload = assertData(data, error, response.status);
@@ -1504,8 +1564,10 @@ export async function lookupProduct(barcode: string): Promise<Product | null> {
   return payload.data as unknown as Product | null;
 }
 
-export async function listSales(): Promise<{ data: Sale[]; meta: PaginatedMeta }> {
-  const { data, error, response } = await apiClient.GET("/v1/sales");
+export async function listSales(table?: TableQuery): Promise<{ data: Sale[]; meta: PaginatedMeta }> {
+  const { data, error, response } = await apiClient.GET("/v1/sales", {
+    params: { query: listedQuery(table) as never },
+  });
   const payload = assertData(data, error, response.status);
   return {
     data: payload.data as unknown as Sale[],
@@ -1535,9 +1597,9 @@ export async function voidSale(id: string): Promise<Sale> {
   return payload.data as unknown as Sale;
 }
 
-export async function listCustomerReturns(saleId?: string): Promise<{ data: CustomerReturn[]; meta: PaginatedMeta }> {
+export async function listCustomerReturns(saleId?: string, table?: TableQuery): Promise<{ data: CustomerReturn[]; meta: PaginatedMeta }> {
   const { data, error, response } = await apiClient.GET("/v1/customer-returns", {
-    params: { query: saleId ? { "filter[sale_id]": saleId } : {} },
+    params: { query: { ...(saleId ? { "filter[sale_id]": saleId } : {}), ...listedQuery(table) } as never },
   });
   const payload = assertData(data, error, response.status);
   return {
@@ -1767,6 +1829,9 @@ export async function listAuditLogs(filters: {
   actorId?: string;
   action?: string;
   auditableType?: string;
+  q?: string;
+  page?: number;
+  on?: string;
 }): Promise<{ data: AuditLogRow[]; meta: PaginatedMeta }> {
   const { data, error, response } = await apiClient.GET("/v1/audit-logs", {
     params: {
@@ -1774,7 +1839,8 @@ export async function listAuditLogs(filters: {
         ...(filters.actorId ? { "filter[actor_id]": filters.actorId } : {}),
         ...(filters.action ? { "filter[action]": filters.action } : {}),
         ...(filters.auditableType ? { "filter[auditable_type]": filters.auditableType } : {}),
-      },
+        ...listedQuery(filters),
+      } as never,
     },
   });
   const payload = assertData(data, error, response.status);

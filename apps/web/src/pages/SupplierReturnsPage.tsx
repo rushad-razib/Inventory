@@ -18,6 +18,7 @@ import { prettyLabel } from "../lib/labels";
 import { formatTaka } from "../lib/money";
 import { can } from "../lib/permissions";
 import { EmptyState } from "./EmptyState";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 import styles from "./catalog.module.css";
 
 const schema = z.object({
@@ -56,7 +57,11 @@ export function SupplierReturnsPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const returnsQuery = useQuery({ queryKey: ["supplier-returns"], queryFn: listSupplierReturns });
+  const filters = useTableFilters();
+  const returnsQuery = useQuery({
+    queryKey: ["supplier-returns", filters.q, filters.on, filters.page],
+    queryFn: () => listSupplierReturns(filters.table),
+  });
   const lotsQuery = useQuery({
     queryKey: ["stock-lots"],
     queryFn: () => listStockLots(),
@@ -149,7 +154,16 @@ export function SupplierReturnsPage() {
       </header>
 
       <div className={styles.split}>
-        <div>
+        <div className={styles.stack}>
+          <TableToolbar
+            q={filters.q}
+            onQ={filters.setQ}
+            date={filters.on}
+            onDate={filters.setOn}
+            page={filters.page}
+            lastPage={returnsQuery.data?.meta.last_page ?? 1}
+            onPage={filters.setPage}
+          />
           {returnsQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
           {returnsQuery.isError ? <p className={styles.error}>{(returnsQuery.error as Error).message}</p> : null}
           {returnsQuery.data && rows.length === 0 ? <EmptyState>No supplier returns yet.</EmptyState> : null}

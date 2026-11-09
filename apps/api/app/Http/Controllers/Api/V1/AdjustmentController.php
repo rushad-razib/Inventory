@@ -21,6 +21,16 @@ class AdjustmentController extends Controller
 
         $query = Adjustment::query()->with(['warehouse', 'product', 'requester']);
 
+        $term = $this->term($request);
+        if ($term !== null) {
+            $like = $this->like($term);
+            $query->whereHas('product', function ($product) use ($like): void {
+                $product->where('sku', 'like', $like)->orWhere('name', 'like', $like);
+            });
+        }
+
+        $this->whereOn($query, $request, 'created_at');
+
         if ($request->filled('filter.warehouse_id')) {
             $query->where('warehouse_id', $request->input('filter.warehouse_id'));
         }

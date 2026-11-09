@@ -27,6 +27,9 @@ class SaleController extends Controller
             $query->where('warehouse_id', $request->input('filter.warehouse_id'));
         }
 
+        $this->whereLike($query, $request, ['number']);
+        $this->whereOn($query, $request, 'created_at');
+
         if ($request->filled('filter.status')) {
             try {
                 $query->where('status', SaleStatus::fromLabel((string) $request->input('filter.status')));

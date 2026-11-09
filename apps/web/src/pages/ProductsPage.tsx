@@ -17,6 +17,7 @@ import {
   type Product,
 } from "../lib/api";
 import { generateBarcode, generateSku } from "../lib/codes";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 import { confirmDelete, showWarning } from "../lib/dialogs";
 import { printProductSticker } from "../lib/sticker";
 import { useAuth } from "../lib/auth";
@@ -85,23 +86,24 @@ export function ProductsPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const canManage = can(user, "catalog.manage");
   const [searchParams] = useSearchParams();
-  const q = searchParams.get("q") ?? "";
+  const urlQ = searchParams.get("q") ?? "";
+  const filters = useTableFilters(urlQ);
 
   const productsQuery = useQuery({
-    queryKey: ["products", q],
-    queryFn: () => listProducts(q || undefined),
+    queryKey: ["products", filters.q, filters.page],
+    queryFn: () => listProducts(undefined, filters.table),
   });
 
   useEffect(() => {
     const first = productsQuery.data?.data[0];
-    if (q && first) {
+    if (urlQ && first) {
       setSelectedId(first.id);
     }
-  }, [q, productsQuery.data]);
+  }, [urlQ, productsQuery.data]);
 
   const categoriesQuery = useQuery({
     queryKey: ["categories"],
-    queryFn: listCategories,
+    queryFn: () => listCategories(),
   });
 
   const suppliersQuery = useQuery({
@@ -245,6 +247,13 @@ export function ProductsPage() {
 
       <div className={styles.split}>
         <div className={styles.stack}>
+          <TableToolbar
+            q={filters.q}
+            onQ={filters.setQ}
+            page={filters.page}
+            lastPage={productsQuery.data?.meta.last_page ?? 1}
+            onPage={filters.setPage}
+          />
           <div className={styles.tableWrap}>
             {productsQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
             {productsQuery.isError ? (

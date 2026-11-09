@@ -7,13 +7,18 @@ import { formatTaka } from "../lib/money";
 import { can } from "../lib/permissions";
 import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 
 export function SalesPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const salesQuery = useQuery({ queryKey: ["sales"], queryFn: listSales });
+  const filters = useTableFilters();
+  const salesQuery = useQuery({
+    queryKey: ["sales", filters.q, filters.on, filters.page],
+    queryFn: () => listSales(filters.table),
+  });
   const returnsQuery = useQuery({
     queryKey: ["customer-returns", selectedId],
     queryFn: () => listCustomerReturns(selectedId ?? undefined),
@@ -46,6 +51,15 @@ export function SalesPage() {
           <p className={styles.subtitle}>Posted sales. A void is refused once any return exists.</p>
         </div>
       </header>
+      <TableToolbar
+        q={filters.q}
+        onQ={filters.setQ}
+        date={filters.on}
+        onDate={filters.setOn}
+        page={filters.page}
+        lastPage={salesQuery.data?.meta.last_page ?? 1}
+        onPage={filters.setPage}
+      />
       {salesQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {salesQuery.isError ? <p className={styles.error}>{(salesQuery.error as Error).message}</p> : null}
       {salesQuery.data && sales.length === 0 ? <EmptyState>No sales yet.</EmptyState> : null}
@@ -87,9 +101,8 @@ export function SalesPage() {
           </h2>
           {selected.lines.map((line) => (
             <p key={line.id}>
-              <span className="mono">{line.product.sku}</span> {line.quantity_returned}/{line.quantity} · cash{" "}
-              <span className="mono">{formatTaka(line.cash_paid)}</span> · points {line.points_redeemed} · earned{" "}
-              {line.points_earned}
+              {line.product.name} <span className="mono">{line.product.sku}</span> · {line.quantity} ·{" "}
+              <span className="mono">{formatTaka(line.unit_price)}</span>
             </p>
           ))}
           {selected.tenders.map((tender) => (

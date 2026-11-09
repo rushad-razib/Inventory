@@ -3,19 +3,24 @@ import { useState } from "react";
 import { listAuditLogs } from "../lib/api";
 import { EmptyState } from "./EmptyState";
 import styles from "./catalog.module.css";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 
 export function AuditPage() {
   const [actorId, setActorId] = useState("");
   const [action, setAction] = useState("");
   const [auditableType, setAuditableType] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const filters = useTableFilters();
   const logsQuery = useQuery({
-    queryKey: ["audit-logs", actorId, action, auditableType],
+    queryKey: ["audit-logs", actorId, action, auditableType, filters.q, filters.on, filters.page],
     queryFn: () =>
       listAuditLogs({
         actorId: actorId || undefined,
         action: action || undefined,
         auditableType: auditableType || undefined,
+        q: filters.q || undefined,
+        on: filters.on || undefined,
+        page: filters.page,
       }),
   });
   const rows = logsQuery.data?.data ?? [];
@@ -33,18 +38,50 @@ export function AuditPage() {
       <div className={styles.toolbar}>
         <label className={styles.label}>
           Actor id
-          <input className={styles.input} value={actorId} onChange={(event) => setActorId(event.target.value)} />
+          <input
+            className={styles.input}
+            value={actorId}
+            onChange={(event) => {
+              setActorId(event.target.value);
+              filters.setPage(1);
+            }}
+          />
         </label>
         <label className={styles.label}>
           Action
-          <input className={styles.input} value={action} onChange={(event) => setAction(event.target.value)} placeholder="sale.posted" />
+          <input
+            className={styles.input}
+            value={action}
+            onChange={(event) => {
+              setAction(event.target.value);
+              filters.setPage(1);
+            }}
+            placeholder="sale.posted"
+          />
         </label>
         <label className={styles.label}>
           Record type
-          <input className={styles.input} value={auditableType} onChange={(event) => setAuditableType(event.target.value)} placeholder="Sale" />
+          <input
+            className={styles.input}
+            value={auditableType}
+            onChange={(event) => {
+              setAuditableType(event.target.value);
+              filters.setPage(1);
+            }}
+            placeholder="Sale"
+          />
         </label>
       </div>
 
+      <TableToolbar
+        q={filters.q}
+        onQ={filters.setQ}
+        date={filters.on}
+        onDate={filters.setOn}
+        page={filters.page}
+        lastPage={logsQuery.data?.meta.last_page ?? 1}
+        onPage={filters.setPage}
+      />
       {logsQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
       {logsQuery.isError ? <p className={styles.error}>{(logsQuery.error as Error).message}</p> : null}
       {logsQuery.data && rows.length === 0 ? <EmptyState>No audit rows for this filter.</EmptyState> : null}

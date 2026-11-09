@@ -27,6 +27,20 @@ class GoodsReceiptController extends Controller
             $query->where('supplier_id', $request->input('filter.supplier_id'));
         }
 
+        $term = $this->term($request);
+        if ($term !== null) {
+            $like = $this->like($term);
+            $query->where(function ($inner) use ($like): void {
+                $inner->whereHas('supplier', function ($supplier) use ($like): void {
+                    $supplier->where('name', 'like', $like)->orWhere('code', 'like', $like);
+                })->orWhereHas('purchaseOrder', function ($order) use ($like): void {
+                    $order->where('number', 'like', $like);
+                });
+            });
+        }
+
+        $this->whereOn($query, $request, 'created_at');
+
         return ApiResponse::paginated(
             $query->orderByDesc('created_at')->paginate($this->perPage($request)),
             GoodsReceiptResource::class,

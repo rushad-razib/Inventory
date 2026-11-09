@@ -9,6 +9,7 @@ import { confirmDelete, showWarning } from "../lib/dialogs";
 import { useAuth } from "../lib/auth";
 import { can } from "../lib/permissions";
 import { EmptyState } from "./EmptyState";
+import { TableToolbar, useTableFilters } from "./TableToolbar";
 import styles from "./catalog.module.css";
 
 const createSchema = z.object({
@@ -33,11 +34,11 @@ export function CustomersPage() {
   const canManage = can(user, "customers.manage");
   const canLookup = can(user, "sales.create");
   const [searchParams] = useSearchParams();
-  const q = searchParams.get("q") ?? "";
+  const filters = useTableFilters(searchParams.get("q") ?? "");
 
   const customersQuery = useQuery({
-    queryKey: ["customers", q],
-    queryFn: () => listCustomers(q || undefined),
+    queryKey: ["customers", filters.q, filters.page],
+    queryFn: () => listCustomers(undefined, filters.table),
     enabled: canManage,
   });
 
@@ -134,6 +135,14 @@ export function CustomersPage() {
 
         <div className={styles.split}>
           {canManage ? (
+            <div className={styles.stack}>
+            <TableToolbar
+              q={filters.q}
+              onQ={filters.setQ}
+              page={filters.page}
+              lastPage={customersQuery.data?.meta.last_page ?? 1}
+              onPage={filters.setPage}
+            />
             <div className={styles.tableWrap}>
               {customersQuery.isLoading ? <p className={styles.muted}>Loading…</p> : null}
               {customersQuery.isError ? (
@@ -168,6 +177,7 @@ export function CustomersPage() {
                   </tbody>
                 </table>
               ) : null}
+            </div>
             </div>
           ) : (
             <p className={styles.muted}>Listing customers requires customers.manage.</p>
