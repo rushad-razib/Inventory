@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Models\CreditNote;
 use App\Models\GoodsReceipt;
+use App\Models\GoodsReceiptLine;
 use App\Models\SaleLineAllocation;
 use App\Models\SupplierBill;
 use Illuminate\Http\Request;
@@ -41,6 +42,33 @@ class SupplierBillResource extends JsonResource
                 'id' => $note->id,
                 'supplier_return_id' => $note->supplier_return_id,
                 'amount' => $note->amount,
+            ])->values()->all(),
+            'receipt' => $this->receipt(),
+        ];
+    }
+
+    /**
+     * @return array{id: string, lines: list<array{id: string, quantity: int, unit_cost: int, product: array{id: string, sku: string, name: string}}>}|null
+     */
+    private function receipt(): ?array
+    {
+        $source = $this->source;
+
+        if (! $source instanceof GoodsReceipt) {
+            return null;
+        }
+
+        return [
+            'id' => $source->id,
+            'lines' => $source->lines->map(fn (GoodsReceiptLine $line): array => [
+                'id' => $line->id,
+                'quantity' => $line->quantity,
+                'unit_cost' => $line->unit_cost,
+                'product' => [
+                    'id' => $line->product->id,
+                    'sku' => $line->product->sku,
+                    'name' => $line->product->name,
+                ],
             ])->values()->all(),
         ];
     }

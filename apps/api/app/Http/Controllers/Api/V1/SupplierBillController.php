@@ -11,6 +11,7 @@ use App\Models\GoodsReceipt;
 use App\Models\SaleLineAllocation;
 use App\Models\SupplierBill;
 use Dedoc\Scramble\Attributes\QueryParameter;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
@@ -23,7 +24,7 @@ class SupplierBillController extends Controller
     {
         $this->authorize('viewAny', SupplierBill::class);
 
-        $query = SupplierBill::query()->with(['supplier', 'creditNotes']);
+        $query = SupplierBill::query()->with($this->billRelations());
 
         if ($request->filled('filter.supplier_id')) {
             $query->where('supplier_id', $request->input('filter.supplier_id'));
@@ -70,9 +71,23 @@ class SupplierBillController extends Controller
     {
         $this->authorize('view', $supplierBill);
 
-        $supplierBill->load(['supplier', 'creditNotes']);
+        $supplierBill->load($this->billRelations());
 
         return ApiResponse::data(new SupplierBillResource($supplierBill));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function billRelations(): array
+    {
+        return [
+            'supplier',
+            'creditNotes',
+            'source' => fn (MorphTo $morphTo) => $morphTo->morphWith([
+                GoodsReceipt::class => ['lines.product'],
+            ]),
+        ];
     }
 
     private function badFilter(string $field): JsonResponse

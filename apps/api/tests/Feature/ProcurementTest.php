@@ -103,6 +103,13 @@ it('receives part of an order onto a new lot and the rest later', function () {
         ->and($receivedLot->ownership)->toBe(LotOwnership::Owned)
         ->and($receivedLot->supplier_id)->toBe($supplier->id);
 
+    $this->actingAs($buyer)
+        ->getJson('/api/v1/supplier-bills')
+        ->assertOk()
+        ->assertJsonPath('data.0.source_type', 'goods_receipt')
+        ->assertJsonPath('data.0.receipt.lines.0.quantity', 4)
+        ->assertJsonPath('data.0.receipt.lines.0.unit_cost', 100);
+
     $this->actingAs($buyer)->postJson('/api/v1/goods-receipts', [
         'purchase_order_id' => $order['id'],
         'lines' => [

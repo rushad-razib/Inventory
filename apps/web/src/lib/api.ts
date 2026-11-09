@@ -1098,6 +1098,15 @@ export type SupplierBill = {
   due_on: string | null;
   supplier: NamedRef;
   credit_notes: { id: string; supplier_return_id: string | null; amount: number }[];
+  receipt: {
+    id: string;
+    lines: {
+      id: string;
+      quantity: number;
+      unit_cost: number;
+      product: { id: string; sku: string; name: string };
+    }[];
+  } | null;
 };
 
 export type SaleLine = {

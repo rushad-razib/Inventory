@@ -351,20 +351,50 @@ function ReceiptDetail({ receipt }: { receipt: GoodsReceipt }) {
       <h2 className={styles.panelTitle}>
         {receipt.supplier.code} · {receipt.warehouse.code}
       </h2>
-      <div className={styles.detailGrid}>
-        {receipt.lots.map((lot) => (
-          <div className={styles.detailRow} key={lot.id}>
-            <span className={styles.detailLabel}>{prettyLabel(lot.ownership)}</span>
-            <span className="mono">
-              {lot.qty_on_hand} · {formatTaka(lot.unit_cost)}
-            </span>
-          </div>
-        ))}
+      <div className={styles.tableWrap}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th className={styles.money}>Qty</th>
+              <th className={styles.money}>Unit cost</th>
+              <th className={styles.money}>Line total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {receipt.lines.map((line) => (
+              <tr key={line.id}>
+                <td>
+                  <span className="mono">{line.product.sku}</span>
+                  {` · ${line.product.name}`}
+                </td>
+                <td className={`mono ${styles.money}`}>{line.quantity}</td>
+                <td className={`mono ${styles.money}`}>{formatTaka(line.unit_cost)}</td>
+                <td className={`mono ${styles.money}`}>{formatTaka(line.quantity * line.unit_cost)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       {receipt.bill ? (
-        <p className={styles.muted}>
-          Open bill {formatTaka(receipt.bill.amount)}, due {receipt.bill.due_on ?? "—"}.
-        </p>
+        <div className={styles.detailGrid}>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Status</span>
+            <span>{prettyLabel(receipt.bill.status)}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Amount</span>
+            <span className="mono">{formatTaka(receipt.bill.amount)}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Paid</span>
+            <span className="mono">{formatTaka(receipt.bill.amount_paid)}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Due</span>
+            <span className="mono">{receipt.bill.due_on ?? "—"}</span>
+          </div>
+        </div>
       ) : (
         <p className={styles.muted}>This consignment receipt has no bill.</p>
       )}

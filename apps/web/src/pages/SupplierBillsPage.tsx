@@ -19,6 +19,7 @@ export function SupplierBillsPage() {
   const [supplierId, setSupplierId] = useState("");
   const [status, setStatus] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  const [openedId, setOpenedId] = useState<string | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
   const [paidAmount, setPaidAmount] = useState<number | null>(null);
 
@@ -42,6 +43,7 @@ export function SupplierBillsPage() {
     () => new Set(bills.filter((bill) => remainder(bill) > 0).map((bill) => bill.id)),
     [bills],
   );
+  const opened = bills.find((bill) => bill.id === openedId && bill.receipt) ?? null;
 
   const payMutation = useMutation({
     mutationFn: createSupplierSettlement,
@@ -80,6 +82,7 @@ export function SupplierBillsPage() {
             onChange={(event) => {
               setSupplierId(event.target.value);
               setSelected([]);
+              setOpenedId(null);
             }}
           >
             <option value="">All suppliers</option>
@@ -98,6 +101,7 @@ export function SupplierBillsPage() {
             onChange={(event) => {
               setStatus(event.target.value);
               setSelected([]);
+              setOpenedId(null);
             }}
           >
             <option value="">All statuses</option>
@@ -132,14 +136,24 @@ export function SupplierBillsPage() {
               <tbody>
                 {bills.map((bill) => {
                   const open = remainder(bill);
+                  const receipt = bill.receipt;
                   return (
-                    <tr key={bill.id}>
+                    <tr
+                      key={bill.id}
+                      className={
+                        receipt
+                          ? [styles.clickable, openedId === bill.id ? styles.selected : ""].filter(Boolean).join(" ")
+                          : undefined
+                      }
+                      onClick={receipt ? () => setOpenedId(bill.id) : undefined}
+                    >
                       {canSettle ? (
                         <td>
                           {open > 0 ? (
                             <input
                               type="checkbox"
                               checked={selected.includes(bill.id)}
+                              onClick={(event) => event.stopPropagation()}
                               onChange={() => toggle(bill.id)}
                               aria-label={`Select ${bill.supplier.name}`}
                             />
@@ -161,37 +175,69 @@ export function SupplierBillsPage() {
             </table>
           </div>
 
-          {canSettle ? (
-            <section className={styles.panel}>
-              <h2 className={styles.panelTitle}>Pay from bank</h2>
-              <div className={styles.detailGrid}>
-                <div className={styles.detailRow}>
-                  <span className={styles.detailLabel}>Bills</span>
-                  <span className="mono">{selected.filter((id) => payableIds.has(id)).length}</span>
-                </div>
-                <div className={styles.detailRow}>
-                  <span className={styles.detailLabel}>Remainder</span>
-                  <span className="mono">{formatTaka(selectedRemainder)}</span>
-                </div>
-              </div>
-              {selected.length > 0 && !oneSupplier ? (
-                <p className={styles.error}>Choose bills from one supplier.</p>
+          {opened?.receipt || canSettle ? (
+            <div className={styles.stack}>
+              {opened?.receipt ? (
+                <section className={styles.panel}>
+                  <h2 className={styles.panelTitle}>{opened.supplier.name}</h2>
+                  <div className={styles.tableWrap}>
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th>Product</th>
+                          <th className={styles.money}>Qty</th>
+                          <th className={styles.money}>Unit cost</th>
+                          <th className={styles.money}>Line total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {opened.receipt.lines.map((line) => (
+                          <tr key={line.id}>
+                            <td>
+                              <span className="mono">{line.product.sku}</span>
+                              {` · ${line.product.name}`}
+                            </td>
+                            <td className={`mono ${styles.money}`}>{line.quantity}</td>
+                            <td className={`mono ${styles.money}`}>{formatTaka(line.unit_cost)}</td>
+                            <td className={`mono ${styles.money}`}>{formatTaka(line.quantity * line.unit_cost)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
               ) : null}
-              {payError ? <p className={styles.error}>{payError}</p> : null}
-              {paidAmount !== null ? (
-                <p className={styles.muted}>
-                  Bank payment recorded for {formatTaka(paidAmount)}.
-                </p>
+              {canSettle ? (
+                <section className={styles.panel}>
+                  <h2 className={styles.panelTitle}>Pay from bank</h2>
+                  <div className={styles.detailGrid}>
+                    <div className={styles.detailRow}>
+                      <span className={styles.detailLabel}>Bills</span>
+                      <span className="mono">{selected.filter((id) => payableIds.has(id)).length}</span>
+                    </div>
+                    <div className={styles.detailRow}>
+                      <span className={styles.detailLabel}>Remainder</span>
+                      <span className="mono">{formatTaka(selectedRemainder)}</span>
+                    </div>
+                  </div>
+                  {selected.length > 0 && !oneSupplier ? (
+                    <p className={styles.error}>Choose bills from one supplier.</p>
+                  ) : null}
+                  {payError ? <p className={styles.error}>{payError}</p> : null}
+                  {paidAmount !== null ? (
+                    <p className={styles.muted}>Bank payment recorded for {formatTaka(paidAmount)}.</p>
+                  ) : null}
+                  <button
+                    className={styles.button}
+                    type="button"
+                    disabled={payMutation.isPending || selected.length === 0 || !oneSupplier}
+                    onClick={() => payMutation.mutate(selected)}
+                  >
+                    {payMutation.isPending ? "Paying…" : "Pay from bank"}
+                  </button>
+                </section>
               ) : null}
-              <button
-                className={styles.button}
-                type="button"
-                disabled={payMutation.isPending || selected.length === 0 || !oneSupplier}
-                onClick={() => payMutation.mutate(selected)}
-              >
-                {payMutation.isPending ? "Paying…" : "Pay from bank"}
-              </button>
-            </section>
+            </div>
           ) : null}
         </div>
       ) : null}
