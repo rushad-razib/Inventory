@@ -32,9 +32,12 @@ export function PosPage() {
   const [mobile, setMobile] = useState("");
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [points, setPoints] = useState(0);
-  const [card, setCard] = useState(0);
-  const [cashReceived, setCashReceived] = useState(0);
+  const [pointsInput, setPointsInput] = useState("");
+  const [cardInput, setCardInput] = useState("");
+  const [cashInput, setCashInput] = useState("");
+  const points = pointsInput === "" ? 0 : Number(pointsInput);
+  const card = cardInput === "" ? 0 : Number(cardInput);
+  const cashReceived = cashInput === "" ? 0 : Number(cashInput);
   const [posted, setPosted] = useState<Sale | null>(null);
   const [receiptChange, setReceiptChange] = useState(0);
   const { data: branding } = useBranding();
@@ -86,7 +89,6 @@ export function PosPage() {
       return;
     }
     setError(null);
-    setPosted(null);
     setCart((current) => {
       const line = current.find((item) => item.product.id === product.id);
       if (!line) {
@@ -116,7 +118,7 @@ export function PosPage() {
     onSuccess: (found) => {
       setError(null);
       setCustomer(found);
-      setPoints(0);
+      setPointsInput("");
       if (!found) {
         setError("No customer has that mobile. Register them to earn points.");
       }
@@ -160,12 +162,6 @@ export function PosPage() {
     onSuccess: async ({ sale, change }) => {
       setPosted(sale);
       setReceiptChange(change);
-      setCart([]);
-      setPoints(0);
-      setCard(0);
-      setCashReceived(0);
-      setMobile("");
-      setCustomer(null);
       setError(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["sales"] }),
@@ -362,7 +358,7 @@ export function PosPage() {
           <button className={styles.buttonSecondary} type="submit">
             Look up
           </button>
-          <button className={styles.buttonSecondary} type="button" onClick={() => { setCustomer(null); setPoints(0); }}>
+          <button className={styles.buttonSecondary} type="button" onClick={() => { setCustomer(null); setPointsInput(""); }}>
             Walk-in
           </button>
         </form>
@@ -437,32 +433,34 @@ export function PosPage() {
             Points
             <input
               className={`mono ${styles.input}`}
-              type="number"
-              min={0}
-              max={pointCap}
-              value={appliedPoints}
+              type="text"
+              inputMode="numeric"
+              placeholder="0"
+              value={pointsInput}
               disabled={customer === null}
-              onChange={(event) => setPoints(Number(event.target.value))}
+              onChange={(event) => setPointsInput(event.target.value.replace(/\D/g, ""))}
             />
           </label>
           <label className={styles.label}>
             Card
             <input
               className={`mono ${styles.input}`}
-              type="number"
-              min={0}
-              value={card}
-              onChange={(event) => setCard(Number(event.target.value))}
+              type="text"
+              inputMode="numeric"
+              placeholder="0"
+              value={cardInput}
+              onChange={(event) => setCardInput(event.target.value.replace(/\D/g, ""))}
             />
           </label>
           <label className={styles.label}>
             Cash received
             <input
               className={`mono ${styles.input}`}
-              type="number"
-              min={0}
-              value={cashReceived}
-              onChange={(event) => setCashReceived(Number(event.target.value))}
+              type="text"
+              inputMode="numeric"
+              placeholder="0"
+              value={cashInput}
+              onChange={(event) => setCashInput(event.target.value.replace(/\D/g, ""))}
             />
           </label>
         </div>
@@ -471,78 +469,101 @@ export function PosPage() {
           <p className={styles.changeDue}>Change due {formatTaka(changeDue(cashReceived, cashDue))}</p>
         </div>
         {error ? <p className={styles.error}>{error}</p> : null}
-        <div className={styles.actions}>
-          <button
-            className={styles.button}
-            type="button"
-            disabled={
-              saleMutation.isPending ||
-              cart.length === 0 ||
-              cashDue + card + appliedPoints !== shelf ||
-              cashReceived < cashDue
-            }
-            onClick={() => saleMutation.mutate()}
-          >
-            {saleMutation.isPending ? "Posting…" : "Post sale"}
-          </button>
-          <button className={styles.buttonSecondary} type="button" disabled={posted === null} onClick={() => window.print()}>
-            Print receipt
-          </button>
-        </div>
+        <button
+          className={styles.button}
+          type="button"
+          disabled={
+            saleMutation.isPending ||
+            cart.length === 0 ||
+            cashDue + card + appliedPoints !== shelf ||
+            cashReceived < cashDue
+          }
+          onClick={() => saleMutation.mutate()}
+        >
+          {saleMutation.isPending ? "Posting…" : "Post sale"}
+        </button>
       </section>
       </div>
       ) : null}
 
       {posted ? (
-        <section className={`${styles.panel} ${styles.saleReceipt}`}>
-          <h2 className={styles.receiptStore}>{brandingLabel(branding)}</h2>
-          <p className={styles.receiptMeta}>
-            <span className="mono">{posted.number}</span>
-            {posted.created_at ? ` · ${new Date(posted.created_at).toLocaleString()}` : ""}
-          </p>
-          <p className={styles.receiptMeta}>{posted.warehouse.name}</p>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th className={styles.money}>Qty</th>
-                <th className={styles.money}>Price</th>
-                <th className={styles.money}>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {posted.lines.map((line) => (
-                <tr key={line.id}>
-                  <td>
-                    {line.product.name}
-                    <span className={`mono ${styles.receiptSku}`}> {line.product.sku}</span>
-                  </td>
-                  <td className={`mono ${styles.money}`}>{line.quantity}</td>
-                  <td className={`mono ${styles.money}`}>{formatTaka(line.unit_price)}</td>
-                  <td className={`mono ${styles.money}`}>{formatTaka(line.shelf_total)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className={styles.receiptTotals}>
-            {posted.tenders.map((tender) => (
-              <p key={tender.id}>
-                {prettyLabel(tender.type)} <span className="mono">{formatTaka(tender.amount)}</span>
+        <div className={styles.receiptModal} role="dialog" aria-modal="true" aria-labelledby="sale-receipt-title">
+          <div className={styles.receiptDialog}>
+            <section className={`${styles.panel} ${styles.saleReceipt}`}>
+              <h2 className={styles.receiptStore} id="sale-receipt-title">
+                {brandingLabel(branding)}
+              </h2>
+              <p className={styles.receiptMeta}>
+                <span className="mono">{posted.number}</span>
+                {posted.created_at ? ` · ${new Date(posted.created_at).toLocaleString()}` : ""}
               </p>
-            ))}
-            <p>
-              Total <span className="mono">{formatTaka(posted.total)}</span>
-            </p>
-            <p>
-              Change <span className="mono">{formatTaka(receiptChange)}</span>
-            </p>
-            {posted.points_earned > 0 ? (
-              <p>
-                Points earned <span className="mono">{posted.points_earned}</span>
-              </p>
-            ) : null}
+              <p className={styles.receiptMeta}>{posted.warehouse.name}</p>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th className={styles.money}>Qty</th>
+                    <th className={styles.money}>Price</th>
+                    <th className={styles.money}>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {posted.lines.map((line) => (
+                    <tr key={line.id}>
+                      <td>
+                        {line.product.name}
+                        <span className={`mono ${styles.receiptSku}`}> {line.product.sku}</span>
+                      </td>
+                      <td className={`mono ${styles.money}`}>{line.quantity}</td>
+                      <td className={`mono ${styles.money}`}>{formatTaka(line.unit_price)}</td>
+                      <td className={`mono ${styles.money}`}>{formatTaka(line.shelf_total)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className={styles.receiptTotals}>
+                {posted.tenders.map((tender) => (
+                  <p key={tender.id}>
+                    {prettyLabel(tender.type)} <span className="mono">{formatTaka(tender.amount)}</span>
+                  </p>
+                ))}
+                <p>
+                  Total <span className="mono">{formatTaka(posted.total)}</span>
+                </p>
+                <p>
+                  Change <span className="mono">{formatTaka(receiptChange)}</span>
+                </p>
+                {posted.points_earned > 0 ? (
+                  <p>
+                    Points earned <span className="mono">{posted.points_earned}</span>
+                  </p>
+                ) : null}
+              </div>
+            </section>
+            <div className={styles.actions}>
+              <button className={styles.button} type="button" onClick={() => window.print()}>
+                Print receipt
+              </button>
+              <button
+                className={styles.buttonSecondary}
+                type="button"
+                onClick={() => {
+                  setPosted(null);
+                  setReceiptChange(0);
+                  setCart([]);
+                  setPointsInput("");
+                  setCardInput("");
+                  setCashInput("");
+                  setMobile("");
+                  setCustomer(null);
+                  setBarcode("");
+                }}
+              >
+                New sale
+              </button>
+            </div>
           </div>
-        </section>
+        </div>
       ) : null}
     </div>
   );
